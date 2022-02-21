@@ -28,6 +28,8 @@
 		EC2C334827C3D36F00C1E6F5 /* GZLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2C334627C3D36F00C1E6F5 /* GZLog.swift */; };
 		EC2C334A27C3DE5000C1E6F5 /* tv_retro.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC2C334927C3DE5000C1E6F5 /* tv_retro.usdz */; };
 		EC2C334B27C3DE5000C1E6F5 /* tv_retro.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC2C334927C3DE5000C1E6F5 /* tv_retro.usdz */; };
+		EC2C334D27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */; };
+		EC2C334E27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +50,7 @@
 		EC2C334327C3D2BF00C1E6F5 /* toy_car.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = toy_car.usdz; sourceTree = "<group>"; };
 		EC2C334627C3D36F00C1E6F5 /* GZLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GZLog.swift; sourceTree = "<group>"; };
 		EC2C334927C3DE5000C1E6F5 /* tv_retro.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = tv_retro.usdz; sourceTree = "<group>"; };
+		EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = toy_biplane.usdz; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +89,7 @@
 				EC2C331127C3D27E00C1E6F5 /* Renderer.swift */,
 				EC2C334327C3D2BF00C1E6F5 /* toy_car.usdz */,
 				EC2C334927C3DE5000C1E6F5 /* tv_retro.usdz */,
+				EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */,
 				EC2C331227C3D27E00C1E6F5 /* ShaderTypes.h */,
 				EC2C331327C3D27F00C1E6F5 /* Assets.xcassets */,
 			);
@@ -208,6 +212,7 @@
 				EC2C333927C3D27F00C1E6F5 /* Assets.xcassets in Resources */,
 				EC2C332427C3D27F00C1E6F5 /* LaunchScreen.storyboard in Resources */,
 				EC2C334427C3D2BF00C1E6F5 /* toy_car.usdz in Resources */,
+				EC2C334D27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -215,6 +220,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EC2C334E27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */,
 				EC2C333127C3D27F00C1E6F5 /* Main.storyboard in Resources */,
 				EC2C334527C3D2BF00C1E6F5 /* toy_car.usdz in Resources */,
 				EC2C333A27C3D27F00C1E6F5 /* Assets.xcassets in Resources */,
