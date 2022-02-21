@@ -152,7 +152,8 @@ class Renderer: NSObject, MTKViewDelegate {
         let metalAllocator = MTKMeshBufferAllocator(device: device)
         
 //        let url = Bundle.main.url(forResource: "toy_car", withExtension: "usdz")
-        let url = Bundle.main.url(forResource: "tv_retro", withExtension: "usdz")
+//        let url = Bundle.main.url(forResource: "tv_retro", withExtension: "usdz")
+        let url = Bundle.main.url(forResource: "toy_biplane", withExtension: "usdz")
         GZLogFunc(url)
         GZLogFunc()
         
@@ -226,10 +227,13 @@ class Renderer: NSObject, MTKViewDelegate {
         uniforms[0].projectionMatrix = projectionMatrix
         
         let rotationAxis = SIMD3<Float>(0, 1, 0)
-        let modelMatrix = simd_mul(simd_mul(
-            matrix4x4_rotation(radians: rotation, axis: rotationAxis),
-            matrix4x4_translation(0, -5, 0)),
-            matrix4x4_scale(scale: 0.23))
+        let modelMatrix =
+        simd_mul(
+            simd_mul(
+                matrix4x4_rotation(radians: rotation, axis: rotationAxis),
+                matrix4x4_translation(0, -2.5, 0)
+            ),
+            matrix4x4_scale(scale: 1.00))
         let viewMatrix = matrix4x4_translation(0.0, 0.0, -28.0)
         uniforms[0].modelViewMatrix = simd_mul(viewMatrix, modelMatrix)
         rotation += 0.01
@@ -265,7 +269,7 @@ class Renderer: NSObject, MTKViewDelegate {
                 renderEncoder.setCullMode(.back)
                 
                 renderEncoder.setFrontFacing(.counterClockwise)
-//                renderEncoder.setTriangleFillMode(.lines)
+                renderEncoder.setTriangleFillMode(.lines)
                 
                 renderEncoder.setRenderPipelineState(pipelineState)
                 
