@@ -18,6 +18,7 @@ let maxBuffersInFlight = 3
 
 enum RendererError: Error {
     case badVertexDescriptor
+    case textureNotFound
 }
 
 class Renderer: NSObject, MTKViewDelegate {
@@ -78,15 +79,19 @@ class Renderer: NSObject, MTKViewDelegate {
         guard let state = device.makeDepthStencilState(descriptor:depthStateDescriptor) else { return nil }
         depthState = state
         
+//        let usdz = "toy_biplane"
+        let usdz = "toy_car"
+//        let usdz = "tv_retro"
         do {
-            meshes = try Renderer.buildMesh(device: device, mtlVertexDescriptor: mtlVertexDescriptor)
+            meshes = try Renderer.buildMesh(device: device, mtlVertexDescriptor: mtlVertexDescriptor, usdz: usdz)
         } catch {
             print("Unable to build MetalKit Mesh. Error info: \(error)")
             return nil
         }
         
         do {
-            colorMap = try Renderer.loadTexture(device: device, textureName: "ColorMap")
+//            colorMap = try Renderer.loadTexture(device: device, textureName: "ColorMap")
+            colorMap = try Renderer.loadTexture(device: device, usdz: usdz)
         } catch {
             print("Unable to load texture. Error info: \(error)")
             return nil
@@ -146,20 +151,37 @@ class Renderer: NSObject, MTKViewDelegate {
     }
     
     class func buildMesh(device: MTLDevice,
-                         mtlVertexDescriptor: MTLVertexDescriptor) throws -> [MTKMesh] {
+                         mtlVertexDescriptor: MTLVertexDescriptor, usdz: String) throws -> [MTKMesh] {
         /// Create and condition mesh data to feed into a pipeline using the given vertex descriptor
         
         let metalAllocator = MTKMeshBufferAllocator(device: device)
         
 //        let url = Bundle.main.url(forResource: "toy_car", withExtension: "usdz")
 //        let url = Bundle.main.url(forResource: "tv_retro", withExtension: "usdz")
-        let url = Bundle.main.url(forResource: "toy_biplane", withExtension: "usdz")
+        let url = Bundle.main.url(forResource: usdz, withExtension: "usdz")
         GZLogFunc(url)
         GZLogFunc()
         
         let asset = MDLAsset(url: url!, vertexDescriptor: nil, bufferAllocator: metalAllocator)
         asset.loadTextures()
         var mtkMeshes = [MTKMesh]()
+        GZLogFunc(asset.count)
+        GZLogFunc()
+        for x in asset.childObjects(of: MDLMesh.self) {
+            guard let mesh = x as? MDLMesh else {
+                continue
+            }
+            GZLogFunc(mesh)
+            for submseh in mesh.submeshes as! [MDLSubmesh] {
+                if let materials = submseh.material {
+                    GZLogFunc(materials.property(with: .baseColor)?.textureSamplerValue?.texture)
+//
+//                    for m in materials {
+//                    }
+                }
+            }
+        }
+        GZLogFunc()
         if let meshes = asset.childObjects(of: MDLMesh.self) as? [MDLMesh], meshes.count > 0 {
             for mdlMesh in meshes {
                 let mdlVertexDescriptor = MTKModelIOVertexDescriptorFromMetal(mtlVertexDescriptor)
@@ -191,6 +213,41 @@ class Renderer: NSObject, MTKViewDelegate {
 //
 //        let m = try MTKMesh(mesh:mdlMesh, device:device)
 //        return [m]
+    }
+    
+    class func loadTexture(device: MTLDevice, usdz: String) throws -> MTLTexture {
+        /// Create and condition mesh data to feed into a pipeline using the given vertex descriptor
+        
+        let metalAllocator = MTKMeshBufferAllocator(device: device)
+        
+//        let url = Bundle.main.url(forResource: "toy_car", withExtension: "usdz")
+//        let url = Bundle.main.url(forResource: "tv_retro", withExtension: "usdz")
+        let url = Bundle.main.url(forResource: usdz, withExtension: "usdz")
+        
+        let asset = MDLAsset(url: url!, vertexDescriptor: nil, bufferAllocator: metalAllocator)
+        asset.loadTextures()
+        for x in asset.childObjects(of: MDLMesh.self) {
+            guard let mesh = x as? MDLMesh else {
+                continue
+            }
+            GZLogFunc(mesh)
+            for submseh in mesh.submeshes as! [MDLSubmesh] {
+                if let materials = submseh.material {
+                    if let t = materials.property(with: .baseColor)?.textureSamplerValue?.texture {
+                        let textureLoaderOptions: [MTKTextureLoader.Option : Any] = [
+                            MTKTextureLoader.Option.textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
+                            MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue),
+                            MTKTextureLoader.Option.origin: MTKTextureLoader.Origin.bottomLeft.rawValue
+                        ]
+                        let textureLoader = MTKTextureLoader(device: device)
+                        if let texture = try? textureLoader.newTexture(texture: t, options: textureLoaderOptions) {
+                            return texture
+                        }
+                    }
+                }
+            }
+        }
+        throw RendererError.textureNotFound
     }
     
     class func loadTexture(device: MTLDevice,
@@ -269,7 +326,7 @@ class Renderer: NSObject, MTKViewDelegate {
                 renderEncoder.setCullMode(.back)
                 
                 renderEncoder.setFrontFacing(.counterClockwise)
-                renderEncoder.setTriangleFillMode(.lines)
+//                renderEncoder.setTriangleFillMode(.lines)
                 
                 renderEncoder.setRenderPipelineState(pipelineState)
                 
