@@ -79,8 +79,8 @@ class Renderer: NSObject, MTKViewDelegate {
         guard let state = device.makeDepthStencilState(descriptor:depthStateDescriptor) else { return nil }
         depthState = state
         
-//        let usdz = "toy_biplane"
-        let usdz = "toy_car"
+        let usdz = "toy_biplane"
+//        let usdz = "toy_car"
 //        let usdz = "tv_retro"
         do {
             meshes = try Renderer.buildMesh(device: device, mtlVertexDescriptor: mtlVertexDescriptor, usdz: usdz)
