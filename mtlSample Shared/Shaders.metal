@@ -17,8 +17,11 @@ using namespace metal;
 
 typedef struct
 {
-    float3 position [[attribute(VertexAttributePosition)]];
-    float2 texCoord [[attribute(VertexAttributeTexcoord)]];
+    float3 position [[attribute(0)]];
+    float3 normal [[attribute(1)]];
+    float2 texCoord [[attribute(2)]];
+//    float3 tangent [[attribute(3)]];
+//    float3 bitangent [[attribute(4)]];
 } Vertex;
 
 typedef struct
