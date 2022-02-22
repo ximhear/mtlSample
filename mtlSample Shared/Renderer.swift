@@ -29,6 +29,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var pipelineState: MTLRenderPipelineState
     var depthState: MTLDepthStencilState
     var colorMap: MTLTexture
+    var normalMap: MTLTexture
     
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
     
@@ -85,15 +86,20 @@ class Renderer: NSObject, MTKViewDelegate {
         do {
             meshes = try Renderer.buildMesh(device: device, mtlVertexDescriptor: mtlVertexDescriptor, usdz: usdz)
         } catch {
-            print("Unable to build MetalKit Mesh. Error info: \(error)")
+            GZLogFunc("Unable to build MetalKit Mesh. Error info: \(error)")
             return nil
         }
         
         do {
-//            colorMap = try Renderer.loadTexture(device: device, textureName: "ColorMap")
-            colorMap = try Renderer.loadTexture(device: device, usdz: usdz)
+            colorMap = try Renderer.loadTexture(device: device, usdz: usdz, semantic: .baseColor)
         } catch {
-            print("Unable to load texture. Error info: \(error)")
+            GZLogFunc("Unable to load texture. Error info: \(error)")
+            return nil
+        }
+        do {
+            normalMap = try Renderer.loadTexture(device: device, usdz: usdz, semantic: .tangentSpaceNormal)
+        } catch {
+            GZLogFunc("Unable to load texture. Error info: \(error)")
             return nil
         }
         
@@ -215,7 +221,7 @@ class Renderer: NSObject, MTKViewDelegate {
 //        return [m]
     }
     
-    class func loadTexture(device: MTLDevice, usdz: String) throws -> MTLTexture {
+    class func loadTexture(device: MTLDevice, usdz: String, semantic: MDLMaterialSemantic) throws -> MTLTexture {
         /// Create and condition mesh data to feed into a pipeline using the given vertex descriptor
         
         let metalAllocator = MTKMeshBufferAllocator(device: device)
@@ -233,7 +239,7 @@ class Renderer: NSObject, MTKViewDelegate {
             GZLogFunc(mesh)
             for submseh in mesh.submeshes as! [MDLSubmesh] {
                 if let materials = submseh.material {
-                    if let t = materials.property(with: .baseColor)?.textureSamplerValue?.texture {
+                    if let t = materials.property(with: semantic)?.textureSamplerValue?.texture {
                         let textureLoaderOptions: [MTKTextureLoader.Option : Any] = [
                             MTKTextureLoader.Option.textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
                             MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue),
@@ -348,6 +354,7 @@ class Renderer: NSObject, MTKViewDelegate {
                     }
                     
                     renderEncoder.setFragmentTexture(colorMap, index: TextureIndex.color.rawValue)
+                    renderEncoder.setFragmentTexture(normalMap, index: TextureIndex.normal.rawValue)
                     
                     for submesh in mesh.submeshes {
                         renderEncoder.drawIndexedPrimitives(type: submesh.primitiveType,
