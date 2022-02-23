@@ -30,6 +30,9 @@ class Renderer: NSObject, MTKViewDelegate {
     var depthState: MTLDepthStencilState
     var colorMap: MTLTexture
     var normalMap: MTLTexture
+    var roughMap: MTLTexture
+    var metalMap: MTLTexture
+    var occulusionMap: MTLTexture
     
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
     
@@ -98,6 +101,24 @@ class Renderer: NSObject, MTKViewDelegate {
         }
         do {
             normalMap = try Renderer.loadTexture(device: device, usdz: usdz, semantic: .tangentSpaceNormal)
+        } catch {
+            GZLogFunc("Unable to load texture. Error info: \(error)")
+            return nil
+        }
+        do {
+            roughMap = try Renderer.loadTexture(device: device, usdz: usdz, semantic: .roughness)
+        } catch {
+            GZLogFunc("Unable to load texture. Error info: \(error)")
+            return nil
+        }
+        do {
+            metalMap = try Renderer.loadTexture(device: device, usdz: usdz, semantic: .metallic)
+        } catch {
+            GZLogFunc("Unable to load texture. Error info: \(error)")
+            return nil
+        }
+        do {
+            occulusionMap = try Renderer.loadTexture(device: device, usdz: usdz, semantic: .ambientOcclusion)
         } catch {
             GZLogFunc("Unable to load texture. Error info: \(error)")
             return nil
@@ -384,6 +405,7 @@ class Renderer: NSObject, MTKViewDelegate {
                     }
                     
                     renderEncoder.setFragmentTexture(colorMap, index: TextureIndex.color.rawValue)
+                    renderEncoder.setFragmentTexture(normalMap, index: TextureIndex.normal.rawValue)
                     renderEncoder.setFragmentTexture(normalMap, index: TextureIndex.normal.rawValue)
                     
                     for submesh in mesh.0.submeshes {

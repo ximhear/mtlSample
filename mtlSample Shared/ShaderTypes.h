@@ -40,6 +40,9 @@ typedef NS_ENUM(NSInteger, TextureIndex)
 {
     TextureIndexColor    = 0,
     TextureIndexNormal    = 1,
+    TextureIndexRough    = 2,
+    TextureIndexMetalic    = 3,
+    TextureIndexOcculusion    = 4,
 };
 
 typedef struct
