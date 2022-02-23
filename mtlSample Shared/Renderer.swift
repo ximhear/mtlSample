@@ -130,22 +130,22 @@ class Renderer: NSObject, MTKViewDelegate {
         mtlVertexDescriptor.layouts[0].stepFunction = MTLVertexStepFunction.perVertex
         
 
-//        mtlVertexDescriptor.attributes[3].format = MTLVertexFormat.float3
-//        mtlVertexDescriptor.attributes[3].offset = 0
-//        mtlVertexDescriptor.attributes[3].bufferIndex = 1
-//
-//        mtlVertexDescriptor.layouts[1].stride = 12
-//        mtlVertexDescriptor.layouts[1].stepRate = 1
-//        mtlVertexDescriptor.layouts[1].stepFunction = MTLVertexStepFunction.perVertex
-//
-//
-//        mtlVertexDescriptor.attributes[4].format = MTLVertexFormat.float3
-//        mtlVertexDescriptor.attributes[4].offset = 0
-//        mtlVertexDescriptor.attributes[4].bufferIndex = 2
-//
-//        mtlVertexDescriptor.layouts[2].stride = 12
-//        mtlVertexDescriptor.layouts[2].stepRate = 1
-//        mtlVertexDescriptor.layouts[2].stepFunction = MTLVertexStepFunction.perVertex
+        mtlVertexDescriptor.attributes[3].format = MTLVertexFormat.float3
+        mtlVertexDescriptor.attributes[3].offset = 0
+        mtlVertexDescriptor.attributes[3].bufferIndex = 1
+
+        mtlVertexDescriptor.layouts[1].stride = 12
+        mtlVertexDescriptor.layouts[1].stepRate = 1
+        mtlVertexDescriptor.layouts[1].stepFunction = MTLVertexStepFunction.perVertex
+
+
+        mtlVertexDescriptor.attributes[4].format = MTLVertexFormat.float3
+        mtlVertexDescriptor.attributes[4].offset = 0
+        mtlVertexDescriptor.attributes[4].bufferIndex = 2
+
+        mtlVertexDescriptor.layouts[2].stride = 12
+        mtlVertexDescriptor.layouts[2].stepRate = 1
+        mtlVertexDescriptor.layouts[2].stepFunction = MTLVertexStepFunction.perVertex
         
         return mtlVertexDescriptor
     }
@@ -226,9 +226,9 @@ class Renderer: NSObject, MTKViewDelegate {
         if let meshes = asset.childObjects(of: MDLMesh.self) as? [MDLMesh], meshes.count > 0 {
             for mdlMesh in meshes {
                 
-//                mdlMesh.addTangentBasis(forTextureCoordinateAttributeNamed: MDLVertexAttributeTextureCoordinate,
-//                                        tangentAttributeNamed: MDLVertexAttributeTangent,
-//                                        bitangentAttributeNamed: MDLVertexAttributeBitangent)
+                mdlMesh.addTangentBasis(forTextureCoordinateAttributeNamed: MDLVertexAttributeTextureCoordinate,
+                                        tangentAttributeNamed: MDLVertexAttributeTangent,
+                                        bitangentAttributeNamed: MDLVertexAttributeBitangent)
                 let vvv = mdlMesh.vertexDescriptor
                 if let m = try? MTKMesh(mesh:mdlMesh, device:device) {
                     mtkMeshes.append((m, mdlMesh))
