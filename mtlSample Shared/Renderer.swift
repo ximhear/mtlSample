@@ -86,6 +86,7 @@ class Renderer: NSObject, MTKViewDelegate {
 //        let usdz = "toy_biplane"
         let usdz = "toy_car"
 //        let usdz = "tv_retro"
+//        let usdz = "gramophone"
         do {
             meshes = try Renderer.buildMesh(device: device, mtlVertexDescriptor: mtlVertexDescriptor, usdz: usdz)
         } catch {
@@ -354,7 +355,7 @@ class Renderer: NSObject, MTKViewDelegate {
         uniforms[0].viewMatrix = viewMatrix
         uniforms[0].normalMatrix = modelMatrix.upperLeft
  
-        rotation += 0.01
+        rotation += 0.002
     }
     
     func draw(in view: MTKView) {

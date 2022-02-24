@@ -40,14 +40,29 @@ vertex ColorInOut vertexShader(Vertex in [[stage_in]],
     float4 position = float4(in.position, 1.0);
 //    out.position = uniforms.projectionMatrix * uniforms.modelViewMatrix * position;
 //    out.texCoord = in.texCoord;
-
+   
+    float dist = -distance(float2(0, 0), float2(position.x, position.z)) / 10;
+    matrix_float4x4 r = matrix_float4x4(
+                                        float4(cos(dist), 0, -sin(dist), 0),
+                                        float4(0, 1, 0, 0),
+                                        float4(sin(dist), 0, cos(dist), 0),
+                                        float4(0, 0, 0, 1)
+                                        );
+    matrix_float4x4 modelMatrix = uniforms.modelMatrix * r;
+//    matrix_float4x4 modelMatrix = uniforms.modelMatrix;
+    matrix_float3x3 normalMatrix = matrix_float3x3(
+                                                   float3(modelMatrix.columns[0].xyz),
+                                                   float3(modelMatrix.columns[1].xyz),
+                                                   float3(modelMatrix.columns[2].xyz)
+                                                   );
+//    matrix_float3x3 normalMatrix = uniforms.normalMatrix;
     ColorInOut out {
-        .position = uniforms.projectionMatrix * uniforms.viewMatrix * uniforms.modelMatrix * position,
+        .position = uniforms.projectionMatrix * uniforms.viewMatrix * modelMatrix * position,
         .texCoord = in.texCoord,
-        .worldPosition = (uniforms.modelMatrix * position).xyz,
-        .worldNormal = uniforms.normalMatrix * in.normal,
-        .worldTangent = uniforms.normalMatrix * in.tangent,
-        .worldBitangent = uniforms.normalMatrix * in.bitangent
+        .worldPosition = (modelMatrix * position).xyz,
+        .worldNormal = normalMatrix * in.normal,
+        .worldTangent = normalMatrix * in.tangent,
+        .worldBitangent = normalMatrix * in.bitangent
   };
   return out;
 }
@@ -74,7 +89,7 @@ fragment float4 fragmentShader(ColorInOut in [[stage_in]],
                                       in.worldNormal) * normalValue;
     normalDirection = normalize(normalDirection);
     
-    float3 lightPosition = float3(0.5, 0, 1);
+    float3 lightPosition = float3(-1, 0, 1);
     float3 lightDirection = normalize(-lightPosition);
     float diffuseIntensity = saturate(-dot(lightDirection, normalDirection));
     
