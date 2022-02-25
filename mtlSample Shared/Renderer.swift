@@ -21,6 +21,30 @@ enum RendererError: Error {
     case textureNotFound
 }
 
+class Mesh {
+    var mesh: MTKMesh
+    var submeshes: [Submesh] = []
+    
+    init(mesh: MTKMesh) {
+        self.mesh = mesh
+    }
+}
+
+class Submesh {
+    var colorMap: MTLTexture?
+    var normalMap: MTLTexture?
+    var roughMap: MTLTexture?
+    var metalicMap: MTLTexture?
+    var occlusionMap: MTLTexture?
+    
+    var submesh: MTKSubmesh
+    
+    init(_ submesh: MTKSubmesh) {
+        self.submesh = submesh
+    }
+    
+}
+
 class Renderer: NSObject, MTKViewDelegate {
     
     public let device: MTLDevice
@@ -28,11 +52,6 @@ class Renderer: NSObject, MTKViewDelegate {
     var dynamicUniformBuffer: MTLBuffer
     var pipelineState: MTLRenderPipelineState
     var depthState: MTLDepthStencilState
-    var colorMap: MTLTexture
-    var normalMap: MTLTexture
-    var roughMap: MTLTexture
-    var metalMap: MTLTexture
-    var occulusionMap: MTLTexture
     
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
     
@@ -46,7 +65,13 @@ class Renderer: NSObject, MTKViewDelegate {
     
     var rotation: Float = 0
     
-    var meshes: [(MTKMesh, MDLMesh)]
+    var meshes: [(Mesh, MDLMesh)] = []
+    
+    var colorMaps: [Int: MTLTexture] = [:]
+    var normalMaps: [String: MTLTexture] = [:]
+    var roughMaps: [String: MTLTexture] = [:]
+    var metalicMaps: [String: MTLTexture] = [:]
+    var occlusionMaps: [String: MTLTexture] = [:]
     
     init?(metalKitView: MTKView) {
         self.device = metalKitView.device!
@@ -83,49 +108,21 @@ class Renderer: NSObject, MTKViewDelegate {
         guard let state = device.makeDepthStencilState(descriptor:depthStateDescriptor) else { return nil }
         depthState = state
         
+        super.init()
+        
 //        let usdz = "toy_biplane"
-        let usdz = "toy_car"
+//        let usdz = "toy_car"
+//        let usdz = "toy_drummer"
 //        let usdz = "tv_retro"
 //        let usdz = "gramophone"
+//        let usdz = "toy_robot_vintage"
+        let usdz = "LemonMeringuePie"
         do {
-            meshes = try Renderer.buildMesh(device: device, mtlVertexDescriptor: mtlVertexDescriptor, usdz: usdz)
+            meshes = try self.buildMesh(device: device, mtlVertexDescriptor: mtlVertexDescriptor, usdz: usdz)
         } catch {
             GZLogFunc("Unable to build MetalKit Mesh. Error info: \(error)")
             return nil
         }
-        
-        do {
-            colorMap = try Renderer.loadTexture(device: device, usdz: usdz, semantic: .baseColor)
-        } catch {
-            GZLogFunc("Unable to load texture. Error info: \(error)")
-            return nil
-        }
-        do {
-            normalMap = try Renderer.loadTexture(device: device, usdz: usdz, semantic: .tangentSpaceNormal)
-        } catch {
-            GZLogFunc("Unable to load texture. Error info: \(error)")
-            return nil
-        }
-        do {
-            roughMap = try Renderer.loadTexture(device: device, usdz: usdz, semantic: .roughness)
-        } catch {
-            GZLogFunc("Unable to load texture. Error info: \(error)")
-            return nil
-        }
-        do {
-            metalMap = try Renderer.loadTexture(device: device, usdz: usdz, semantic: .metallic)
-        } catch {
-            GZLogFunc("Unable to load texture. Error info: \(error)")
-            return nil
-        }
-        do {
-            occulusionMap = try Renderer.loadTexture(device: device, usdz: usdz, semantic: .ambientOcclusion)
-        } catch {
-            GZLogFunc("Unable to load texture. Error info: \(error)")
-            return nil
-        }
-        
-        super.init()
         
     }
     
@@ -196,7 +193,7 @@ class Renderer: NSObject, MTKViewDelegate {
         return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
     
-    static var defaultVertexDescriptor: MDLVertexDescriptor = {
+    var defaultVertexDescriptor: MDLVertexDescriptor = {
         let vertexDescriptor = MDLVertexDescriptor()
         var offset  = 0
         
@@ -228,8 +225,8 @@ class Renderer: NSObject, MTKViewDelegate {
         return vertexDescriptor
     }()
     
-    class func buildMesh(device: MTLDevice,
-                         mtlVertexDescriptor: MTLVertexDescriptor, usdz: String) throws -> [(MTKMesh, MDLMesh)] {
+    func buildMesh(device: MTLDevice,
+                         mtlVertexDescriptor: MTLVertexDescriptor, usdz: String) throws -> [(Mesh, MDLMesh)] {
         /// Create and condition mesh data to feed into a pipeline using the given vertex descriptor
         
         let metalAllocator = MTKMeshBufferAllocator(device: device)
@@ -244,19 +241,101 @@ class Renderer: NSObject, MTKViewDelegate {
         
         let asset = MDLAsset(url: url!, vertexDescriptor: mdlVertexDescriptor, bufferAllocator: metalAllocator)
         asset.loadTextures()
-        var mtkMeshes = [(MTKMesh, MDLMesh)]()
+        var mtkMeshes = [(Mesh, MDLMesh)]()
+         
+        let textureLoader = MTKTextureLoader(device: device)
+        let textureLoaderOptions: [MTKTextureLoader.Option : Any] = [
+            MTKTextureLoader.Option.textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
+            MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue),
+            MTKTextureLoader.Option.origin: MTKTextureLoader.Origin.bottomLeft.rawValue
+        ]
+        
         if let meshes = asset.childObjects(of: MDLMesh.self) as? [MDLMesh], meshes.count > 0 {
             for mdlMesh in meshes {
                 
                 mdlMesh.addTangentBasis(forTextureCoordinateAttributeNamed: MDLVertexAttributeTextureCoordinate,
                                         tangentAttributeNamed: MDLVertexAttributeTangent,
                                         bitangentAttributeNamed: MDLVertexAttributeBitangent)
-                let vvv = mdlMesh.vertexDescriptor
                 if let m = try? MTKMesh(mesh:mdlMesh, device:device) {
-                    mtkMeshes.append((m, mdlMesh))
+                    GZLogFunc(m.submeshes.count)
+                    GZLogFunc(mdlMesh.submeshes?.count)
+                    GZLogFunc()
+                    let mesh = Mesh(mesh: m)
+                    if let submeshes = mdlMesh.submeshes as? [MDLSubmesh] {
+                        for (index, s) in submeshes.enumerated() {
+                            let submesh = Submesh(m.submeshes[index])
+                            if let materials = s.material {
+                                if let t = materials.property(with: .baseColor)?.textureSamplerValue?.texture {
+                                    GZLogFunc(t.hash)
+                                    if let tt = colorMaps[t.hash] {
+                                        GZLogFunc("texture \(t.hash) already exists.")
+                                        submesh.colorMap = tt
+                                    }
+                                    else {
+                                        if let texture = try? textureLoader.newTexture(texture: t, options: textureLoaderOptions) {
+                                            colorMaps[t.hash] = texture
+                                            submesh.colorMap = texture
+                                        }
+                                    }
+                                }
+                                if let t = materials.property(with: .tangentSpaceNormal)?.textureSamplerValue?.texture {
+                                    if let tt = normalMaps[t.name] {
+                                        GZLogFunc("texture \(t.name) already exists.")
+                                        submesh.normalMap = tt
+                                    }
+                                    else {
+                                        if let texture = try? textureLoader.newTexture(texture: t, options: textureLoaderOptions) {
+                                            normalMaps[t.name] = texture
+                                            submesh.normalMap = texture
+                                        }
+                                    }
+                                }
+                                if let t = materials.property(with: .roughness)?.textureSamplerValue?.texture {
+                                    if let tt = roughMaps[t.name] {
+                                        GZLogFunc("texture \(t.name) already exists.")
+                                        submesh.roughMap = tt
+                                    }
+                                    else {
+                                        if let texture = try? textureLoader.newTexture(texture: t, options: textureLoaderOptions) {
+                                            roughMaps[t.name] = texture
+                                            submesh.roughMap = texture
+                                        }
+                                    }
+                                }
+                                if let t = materials.property(with: .metallic)?.textureSamplerValue?.texture {
+                                    if let tt = metalicMaps[t.name] {
+                                        GZLogFunc("texture \(t.name) already exists.")
+                                        submesh.metalicMap = tt
+                                    }
+                                    else {
+                                        if let texture = try? textureLoader.newTexture(texture: t, options: textureLoaderOptions) {
+                                            metalicMaps[t.name] = texture
+                                            submesh.metalicMap = texture
+                                        }
+                                    }
+                                }
+                                if let t = materials.property(with: .ambientOcclusion)?.textureSamplerValue?.texture {
+                                    if let tt = occlusionMaps[t.name] {
+                                        GZLogFunc("texture \(t.name) already exists.")
+                                        submesh.occlusionMap = tt
+                                    }
+                                    else {
+                                        if let texture = try? textureLoader.newTexture(texture: t, options: textureLoaderOptions) {
+                                            occlusionMaps[t.name] = texture
+                                            submesh.occlusionMap = texture
+                                        }
+                                    }
+                                }
+                            }
+                            mesh.submeshes.append(submesh)
+                        }
+                    }
+                    mtkMeshes.append((mesh, mdlMesh))
                 }
             }
         }
+        GZLogFunc(colorMaps.count)
+        GZLogFunc(normalMaps.count)
         return mtkMeshes
         
 //        let mdlVertexDescriptor = MTKModelIOVertexDescriptorFromMetal(mtlVertexDescriptor)
@@ -398,27 +477,26 @@ class Renderer: NSObject, MTKViewDelegate {
                 renderEncoder.setFragmentBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
                 
                 for mesh in meshes {
-                    for (index, element) in mesh.0.vertexDescriptor.layouts.enumerated() {
+                    for (index, element) in mesh.0.mesh.vertexDescriptor.layouts.enumerated() {
                         guard let layout = element as? MDLVertexBufferLayout else {
                             return
                         }
                         
                         if layout.stride != 0 {
-                            let buffer = mesh.0.vertexBuffers[index]
+                            let buffer = mesh.0.mesh.vertexBuffers[index]
                             renderEncoder.setVertexBuffer(buffer.buffer, offset:buffer.offset, index: index)
                         }
                     }
                     
-                    renderEncoder.setFragmentTexture(colorMap, index: TextureIndex.color.rawValue)
-                    renderEncoder.setFragmentTexture(normalMap, index: TextureIndex.normal.rawValue)
-                    renderEncoder.setFragmentTexture(normalMap, index: TextureIndex.normal.rawValue)
-                    
                     for submesh in mesh.0.submeshes {
-                        renderEncoder.drawIndexedPrimitives(type: submesh.primitiveType,
-                                                            indexCount: submesh.indexCount,
-                                                            indexType: submesh.indexType,
-                                                            indexBuffer: submesh.indexBuffer.buffer,
-                                                            indexBufferOffset: submesh.indexBuffer.offset)
+                        renderEncoder.setFragmentTexture(submesh.colorMap, index: TextureIndex.color.rawValue)
+                        renderEncoder.setFragmentTexture(submesh.normalMap, index: TextureIndex.normal.rawValue)
+                        
+                        renderEncoder.drawIndexedPrimitives(type: submesh.submesh.primitiveType,
+                                                            indexCount: submesh.submesh.indexCount,
+                                                            indexType: submesh.submesh.indexType,
+                                                            indexBuffer: submesh.submesh.indexBuffer.buffer,
+                                                            indexBufferOffset: submesh.submesh.indexBuffer.offset)
                         
                     }
                 }

@@ -48,8 +48,8 @@ vertex ColorInOut vertexShader(Vertex in [[stage_in]],
                                         float4(sin(dist), 0, cos(dist), 0),
                                         float4(0, 0, 0, 1)
                                         );
-    matrix_float4x4 modelMatrix = uniforms.modelMatrix * r;
-//    matrix_float4x4 modelMatrix = uniforms.modelMatrix;
+//    matrix_float4x4 modelMatrix = uniforms.modelMatrix * r;
+    matrix_float4x4 modelMatrix = uniforms.modelMatrix;
     matrix_float3x3 normalMatrix = matrix_float3x3(
                                                    float3(modelMatrix.columns[0].xyz),
                                                    float3(modelMatrix.columns[1].xyz),

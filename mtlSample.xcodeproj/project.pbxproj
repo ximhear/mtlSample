@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		963EEBCE27C8C51C00136263 /* toy_drummer.usdz in Resources */ = {isa = PBXBuildFile; fileRef = 963EEBCD27C8C51C00136263 /* toy_drummer.usdz */; };
+		963EEBCF27C8C51C00136263 /* toy_drummer.usdz in Resources */ = {isa = PBXBuildFile; fileRef = 963EEBCD27C8C51C00136263 /* toy_drummer.usdz */; };
+		963EEBD127C8CF1A00136263 /* toy_robot_vintage.usdz in Resources */ = {isa = PBXBuildFile; fileRef = 963EEBD027C8CF1A00136263 /* toy_robot_vintage.usdz */; };
+		963EEBD227C8CF1A00136263 /* toy_robot_vintage.usdz in Resources */ = {isa = PBXBuildFile; fileRef = 963EEBD027C8CF1A00136263 /* toy_robot_vintage.usdz */; };
+		963EEBD427C8CFF100136263 /* LemonMeringuePie.usdz in Resources */ = {isa = PBXBuildFile; fileRef = 963EEBD327C8CFF100136263 /* LemonMeringuePie.usdz */; };
+		963EEBD527C8CFF100136263 /* LemonMeringuePie.usdz in Resources */ = {isa = PBXBuildFile; fileRef = 963EEBD327C8CFF100136263 /* LemonMeringuePie.usdz */; };
 		EC0B9D6B27C7E79E00C18013 /* gramophone.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC0B9D6A27C7E79E00C18013 /* gramophone.usdz */; };
 		EC0B9D6C27C7E79E00C18013 /* gramophone.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC0B9D6A27C7E79E00C18013 /* gramophone.usdz */; };
 		EC2C331C27C3D27F00C1E6F5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2C331B27C3D27F00C1E6F5 /* AppDelegate.swift */; };
@@ -35,6 +41,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		963EEBCD27C8C51C00136263 /* toy_drummer.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; name = toy_drummer.usdz; path = ../../../Downloads/toy_drummer.usdz; sourceTree = "<group>"; };
+		963EEBD027C8CF1A00136263 /* toy_robot_vintage.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; name = toy_robot_vintage.usdz; path = ../../../Downloads/toy_robot_vintage.usdz; sourceTree = "<group>"; };
+		963EEBD327C8CFF100136263 /* LemonMeringuePie.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; name = LemonMeringuePie.usdz; path = ../../../Downloads/LemonMeringuePie.usdz; sourceTree = "<group>"; };
 		EC0B9D6A27C7E79E00C18013 /* gramophone.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = gramophone.usdz; sourceTree = "<group>"; };
 		EC2C331027C3D27E00C1E6F5 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		EC2C331127C3D27E00C1E6F5 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
@@ -94,6 +103,9 @@
 				EC2C334927C3DE5000C1E6F5 /* tv_retro.usdz */,
 				EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */,
 				EC0B9D6A27C7E79E00C18013 /* gramophone.usdz */,
+				963EEBCD27C8C51C00136263 /* toy_drummer.usdz */,
+				963EEBD027C8CF1A00136263 /* toy_robot_vintage.usdz */,
+				963EEBD327C8CFF100136263 /* LemonMeringuePie.usdz */,
 				EC2C331227C3D27E00C1E6F5 /* ShaderTypes.h */,
 				EC2C331327C3D27F00C1E6F5 /* Assets.xcassets */,
 			);
@@ -210,14 +222,17 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				963EEBD427C8CFF100136263 /* LemonMeringuePie.usdz in Resources */,
 				EC2C334A27C3DE5000C1E6F5 /* tv_retro.usdz in Resources */,
 				EC2C333727C3D27F00C1E6F5 /* ShaderTypes.h in Resources */,
 				EC2C332127C3D27F00C1E6F5 /* Main.storyboard in Resources */,
 				EC0B9D6B27C7E79E00C18013 /* gramophone.usdz in Resources */,
 				EC2C333927C3D27F00C1E6F5 /* Assets.xcassets in Resources */,
 				EC2C332427C3D27F00C1E6F5 /* LaunchScreen.storyboard in Resources */,
+				963EEBD127C8CF1A00136263 /* toy_robot_vintage.usdz in Resources */,
 				EC2C334427C3D2BF00C1E6F5 /* toy_car.usdz in Resources */,
 				EC2C334D27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */,
+				963EEBCE27C8C51C00136263 /* toy_drummer.usdz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -227,7 +242,10 @@
 			files = (
 				EC2C334E27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */,
 				EC2C333127C3D27F00C1E6F5 /* Main.storyboard in Resources */,
+				963EEBD227C8CF1A00136263 /* toy_robot_vintage.usdz in Resources */,
 				EC2C334527C3D2BF00C1E6F5 /* toy_car.usdz in Resources */,
+				963EEBD527C8CFF100136263 /* LemonMeringuePie.usdz in Resources */,
+				963EEBCF27C8C51C00136263 /* toy_drummer.usdz in Resources */,
 				EC2C333A27C3D27F00C1E6F5 /* Assets.xcassets in Resources */,
 				EC2C334B27C3DE5000C1E6F5 /* tv_retro.usdz in Resources */,
 				EC0B9D6C27C7E79E00C18013 /* gramophone.usdz in Resources */,
