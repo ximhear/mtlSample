@@ -116,7 +116,14 @@ class Renderer: NSObject, MTKViewDelegate {
 //        let usdz = "tv_retro"
 //        let usdz = "gramophone"
 //        let usdz = "toy_robot_vintage"
-        let usdz = "LemonMeringuePie"
+//        let usdz = "LemonMeringuePie"
+//        let usdz = "AirForce"
+//        let usdz = "PegasusTrail"
+//        let usdz = "chair_swan"
+//        let usdz = "cup_saucer_set"
+//        let usdz = "fender_stratocaster"
+//        let usdz = "flower_tulip"
+        let usdz = "wateringcan"
         do {
             meshes = try self.buildMesh(device: device, mtlVertexDescriptor: mtlVertexDescriptor, usdz: usdz)
         } catch {
@@ -427,7 +434,7 @@ class Renderer: NSObject, MTKViewDelegate {
                 matrix4x4_rotation(radians: rotation, axis: rotationAxis),
                 matrix4x4_translation(0, -2.5, 0)
             ),
-            matrix4x4_scale(scale: 1.00))
+            matrix4x4_scale(scale: 0.30))
         let viewMatrix = matrix4x4_translation(0.0, 0.0, -28.0)
         uniforms[0].modelViewMatrix = simd_mul(viewMatrix, modelMatrix)
         uniforms[0].modelMatrix = modelMatrix
