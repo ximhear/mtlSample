@@ -15,6 +15,8 @@
 
 using namespace metal;
 
+constant float PI = 3.1415926535897932384626433832795;
+
 typedef struct
 {
     float3 position [[attribute(0)]];
@@ -32,6 +34,8 @@ typedef struct
     float3 worldNormal;
     float3 worldTangent;
     float3 worldBitangent;
+    float3 spotlightPosition;
+    float3 coneDirection;
 } ColorInOut;
 
 vertex ColorInOut vertexShader(Vertex in [[stage_in]],
@@ -62,14 +66,16 @@ vertex ColorInOut vertexShader(Vertex in [[stage_in]],
         .worldPosition = (modelMatrix * position).xyz,
         .worldNormal = normalMatrix * in.normal,
         .worldTangent = normalMatrix * in.tangent,
-        .worldBitangent = normalMatrix * in.bitangent
+        .worldBitangent = normalMatrix * in.bitangent,
+        .spotlightPosition = normalMatrix * float3( 30, 10, 30),
+        .coneDirection = normalMatrix * float3(-1, 0, -1)
   };
   return out;
 }
 
 fragment float4 fragmentShader(ColorInOut in [[stage_in]],
                                constant Uniforms & uniforms [[ buffer(BufferIndexUniforms) ]],
-                               texture2d<half> colorMap     [[ texture(TextureIndexColor) ]],
+                               texture2d<float> colorMap     [[ texture(TextureIndexColor) ]],
                                texture2d<float> normalMap     [[ texture(TextureIndexNormal) ]],
                                texture2d<float> roughMap     [[ texture(TextureIndexRough) ]],
                                texture2d<float> metalMap     [[ texture(TextureIndexMetalic) ]],
@@ -80,7 +86,7 @@ fragment float4 fragmentShader(ColorInOut in [[stage_in]],
                                    mag_filter::linear,
                                    min_filter::linear);
 
-    half4 colorSample   = colorMap.sample(colorSampler, in.texCoord.xy);
+    float3 baseColor = colorMap.sample(colorSampler, in.texCoord.xy).xyz;
     float3 normalValue   = normalMap.sample(colorSampler, in.texCoord.xy).rgb;
     normalValue = normalValue * 2 - 1;
     normalValue = normalize(normalValue);
@@ -89,13 +95,34 @@ fragment float4 fragmentShader(ColorInOut in [[stage_in]],
                                       in.worldNormal) * normalValue;
     normalDirection = normalize(normalDirection);
     
-    float3 lightPosition = float3(-1, 0, 1);
+    float3 lightPosition = float3(-1, 0, 0);
     float3 lightDirection = normalize(-lightPosition);
     float diffuseIntensity = saturate(-dot(lightDirection, normalDirection));
+    
+    float3 spotlightPosition = float3( 30, 10, 40);
+    float3 lightColor = float3(1, 0, 0);
+    float coneAngle = PI * 9 / 180;
+    float3 coneDirection = float3(-1, 0, -1);
+    float3 lightAttenuation = float3(1.0, 0.5, 0);
+    float coneAttenuation = 32;
     
     float3 rough   = float3(1) - roughMap.sample(colorSampler, in.texCoord.xy).rrr;
     float3 metalic   = float3(1) - metalMap.sample(colorSampler, in.texCoord.xy).rrr;
     float3 occulusion = float3(1) - occulusionMap.sample(colorSampler, in.texCoord.xy).rrr;
 
-    return float4(colorSample) * diffuseIntensity;
+    float3 color = 0;
+    {
+        float d = distance(spotlightPosition, in.worldPosition);
+        float3 lightDirection = normalize(in.worldPosition - spotlightPosition);
+        coneDirection = normalize(coneDirection);
+        float spotResult = dot(lightDirection, coneDirection);
+        if (spotResult > cos(coneAngle)) {
+            float attenuation = 1.0 / (lightAttenuation.x + lightAttenuation.y * d + lightAttenuation.z * d * d);
+            attenuation *= pow(spotResult, coneAttenuation);
+            float diffuseIntensity = saturate(dot(-lightDirection, normalDirection));
+            color = lightColor * diffuseIntensity;
+            color *= attenuation;
+        }
+    }
+    return float4(baseColor, 1) * diffuseIntensity + float4(color, 1);
 }
