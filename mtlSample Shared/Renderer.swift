@@ -24,9 +24,11 @@ enum RendererError: Error {
 class Mesh {
     var mesh: MTKMesh
     var submeshes: [Submesh] = []
+    var meshUniforms: MeshUniforms
     
     init(mesh: MTKMesh) {
         self.mesh = mesh
+        self.meshUniforms = MeshUniforms(modelMatrix: .identity(), normalMatrix: .init())
     }
 }
 
@@ -115,7 +117,7 @@ class Renderer: NSObject, MTKViewDelegate {
 //        let usdz = "toy_drummer"
 //        let usdz = "tv_retro"
 //        let usdz = "gramophone"
-//        let usdz = "toy_robot_vintage"
+        let usdz = "toy_robot_vintage"
 //        let usdz = "LemonMeringuePie"
 //        let usdz = "AirForce"
 //        let usdz = "PegasusTrail"
@@ -123,7 +125,7 @@ class Renderer: NSObject, MTKViewDelegate {
 //        let usdz = "cup_saucer_set"
 //        let usdz = "fender_stratocaster"
 //        let usdz = "flower_tulip"
-        let usdz = "wateringcan"
+//        let usdz = "wateringcan"
         do {
             meshes = try self.buildMesh(device: device, mtlVertexDescriptor: mtlVertexDescriptor, usdz: usdz)
         } catch {
@@ -259,23 +261,27 @@ class Renderer: NSObject, MTKViewDelegate {
         
         if let meshes = asset.childObjects(of: MDLMesh.self) as? [MDLMesh], meshes.count > 0 {
             for mdlMesh in meshes {
+                GZLogFunc(MDLTransform.globalTransform(with:mdlMesh, atTime:0))
+//                GZLogFunc(mdlMesh.transform?.minimumTime)
+                GZLogFunc(mdlMesh.transform?.localTransform!(atTime:0))
+                GZLogFunc(mdlMesh.transform?.matrix)
                 
                 mdlMesh.addTangentBasis(forTextureCoordinateAttributeNamed: MDLVertexAttributeTextureCoordinate,
                                         tangentAttributeNamed: MDLVertexAttributeTangent,
                                         bitangentAttributeNamed: MDLVertexAttributeBitangent)
                 if let m = try? MTKMesh(mesh:mdlMesh, device:device) {
-                    GZLogFunc(m.submeshes.count)
-                    GZLogFunc(mdlMesh.submeshes?.count)
-                    GZLogFunc()
+//                    GZLogFunc(m.submeshes.count)
+//                    GZLogFunc(mdlMesh.submeshes?.count)
+//                    GZLogFunc()
                     let mesh = Mesh(mesh: m)
                     if let submeshes = mdlMesh.submeshes as? [MDLSubmesh] {
                         for (index, s) in submeshes.enumerated() {
                             let submesh = Submesh(m.submeshes[index])
                             if let materials = s.material {
                                 if let t = materials.property(with: .baseColor)?.textureSamplerValue?.texture {
-                                    GZLogFunc(t.hash)
+//                                    GZLogFunc(t.hash)
                                     if let tt = colorMaps[t.hash] {
-                                        GZLogFunc("texture \(t.hash) already exists.")
+//                                        GZLogFunc("texture \(t.hash) already exists.")
                                         submesh.colorMap = tt
                                     }
                                     else {
@@ -287,7 +293,7 @@ class Renderer: NSObject, MTKViewDelegate {
                                 }
                                 if let t = materials.property(with: .tangentSpaceNormal)?.textureSamplerValue?.texture {
                                     if let tt = normalMaps[t.name] {
-                                        GZLogFunc("texture \(t.name) already exists.")
+//                                        GZLogFunc("texture \(t.name) already exists.")
                                         submesh.normalMap = tt
                                     }
                                     else {
@@ -299,7 +305,7 @@ class Renderer: NSObject, MTKViewDelegate {
                                 }
                                 if let t = materials.property(with: .roughness)?.textureSamplerValue?.texture {
                                     if let tt = roughMaps[t.name] {
-                                        GZLogFunc("texture \(t.name) already exists.")
+//                                        GZLogFunc("texture \(t.name) already exists.")
                                         submesh.roughMap = tt
                                     }
                                     else {
@@ -311,7 +317,7 @@ class Renderer: NSObject, MTKViewDelegate {
                                 }
                                 if let t = materials.property(with: .metallic)?.textureSamplerValue?.texture {
                                     if let tt = metalicMaps[t.name] {
-                                        GZLogFunc("texture \(t.name) already exists.")
+//                                        GZLogFunc("texture \(t.name) already exists.")
                                         submesh.metalicMap = tt
                                     }
                                     else {
@@ -323,7 +329,7 @@ class Renderer: NSObject, MTKViewDelegate {
                                 }
                                 if let t = materials.property(with: .ambientOcclusion)?.textureSamplerValue?.texture {
                                     if let tt = occlusionMaps[t.name] {
-                                        GZLogFunc("texture \(t.name) already exists.")
+//                                        GZLogFunc("texture \(t.name) already exists.")
                                         submesh.occlusionMap = tt
                                     }
                                     else {
@@ -427,21 +433,11 @@ class Renderer: NSObject, MTKViewDelegate {
         
         uniforms[0].projectionMatrix = projectionMatrix
         
-        let rotationAxis = SIMD3<Float>(0, 1, 0)
-        let modelMatrix =
-        simd_mul(
-            simd_mul(
-                matrix4x4_rotation(radians: rotation, axis: rotationAxis),
-                matrix4x4_translation(0, 0, 0)
-            ),
-            matrix4x4_scale(scale: 1.00))
-        let viewMatrix = matrix4x4_translation(0.0, -20.0, -54.0)
-        uniforms[0].modelViewMatrix = simd_mul(viewMatrix, modelMatrix)
-        uniforms[0].modelMatrix = modelMatrix
+//        GZLogFunc(transform)
+        let viewMatrix = matrix4x4_translation(0.0, -4.00, -20.5)
         uniforms[0].viewMatrix = viewMatrix
-        uniforms[0].normalMatrix = modelMatrix.upperLeft
  
-        rotation += 0.005
+//        rotation += 0.005
     }
     
     func draw(in view: MTKView) {
@@ -457,7 +453,6 @@ class Renderer: NSObject, MTKViewDelegate {
             }
             
             self.updateDynamicBufferState()
-            
             self.updateGameState()
             
             /// Delay getting the currentRenderPassDescriptor until we absolutely need it to avoid
@@ -480,10 +475,25 @@ class Renderer: NSObject, MTKViewDelegate {
                 
                 renderEncoder.setDepthStencilState(depthState)
                 
-                renderEncoder.setVertexBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
-                renderEncoder.setFragmentBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
-                
                 for mesh in meshes {
+                    let transform = MDLTransform.globalTransform(with:mesh.1, atTime:0)
+                    let rotationAxis = SIMD3<Float>(0, 1, 0)
+                    let modelMatrix =
+                    simd_mul(
+                        //            matrix4x4_scale(scale: 0.05),
+                        .identity(),
+                        simd_mul(
+                            matrix4x4_rotation(radians: rotation, axis: rotationAxis),
+                            transform
+                            //                matrix4x4_translation(0, 0, 0)
+                        )
+                    )
+                    mesh.0.meshUniforms = MeshUniforms(modelMatrix: modelMatrix, normalMatrix: modelMatrix.upperLeft)
+                    
+                    renderEncoder.setVertexBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
+                    renderEncoder.setVertexBytes(&mesh.0.meshUniforms, length: MemoryLayout<MeshUniforms>.stride, index: BufferIndex.meshUniforms.rawValue)
+                    renderEncoder.setFragmentBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
+                
                     for (index, element) in mesh.0.mesh.vertexDescriptor.layouts.enumerated() {
                         guard let layout = element as? MDLVertexBufferLayout else {
                             return
@@ -518,6 +528,7 @@ class Renderer: NSObject, MTKViewDelegate {
             }
             
             commandBuffer.commit()
+            rotation += 0.005
         }
     }
     
