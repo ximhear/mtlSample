@@ -25,10 +25,12 @@ class Mesh {
     var mesh: MTKMesh
     var submeshes: [Submesh] = []
     var meshUniforms: MeshUniforms
+    var transform: matrix_float4x4
     
-    init(mesh: MTKMesh) {
+    init(mesh: MTKMesh, transform: matrix_float4x4) {
         self.mesh = mesh
         self.meshUniforms = MeshUniforms(modelMatrix: .identity(), normalMatrix: .init())
+        self.transform = transform
     }
 }
 
@@ -114,10 +116,10 @@ class Renderer: NSObject, MTKViewDelegate {
         
 //        let usdz = "toy_biplane"
 //        let usdz = "toy_car"
-//        let usdz = "toy_drummer"
+        let usdz = "toy_drummer"
 //        let usdz = "tv_retro"
 //        let usdz = "gramophone"
-        let usdz = "toy_robot_vintage"
+//        let usdz = "toy_robot_vintage"
 //        let usdz = "LemonMeringuePie"
 //        let usdz = "AirForce"
 //        let usdz = "PegasusTrail"
@@ -261,10 +263,9 @@ class Renderer: NSObject, MTKViewDelegate {
         
         if let meshes = asset.childObjects(of: MDLMesh.self) as? [MDLMesh], meshes.count > 0 {
             for mdlMesh in meshes {
-                GZLogFunc(MDLTransform.globalTransform(with:mdlMesh, atTime:0))
+                let transform = MDLTransform.globalTransform(with:mdlMesh, atTime:0)
 //                GZLogFunc(mdlMesh.transform?.minimumTime)
-                GZLogFunc(mdlMesh.transform?.localTransform!(atTime:0))
-                GZLogFunc(mdlMesh.transform?.matrix)
+//                GZLogFunc(mdlMesh.transform?.localTransform!(atTime:0))
                 
                 mdlMesh.addTangentBasis(forTextureCoordinateAttributeNamed: MDLVertexAttributeTextureCoordinate,
                                         tangentAttributeNamed: MDLVertexAttributeTangent,
@@ -273,7 +274,7 @@ class Renderer: NSObject, MTKViewDelegate {
 //                    GZLogFunc(m.submeshes.count)
 //                    GZLogFunc(mdlMesh.submeshes?.count)
 //                    GZLogFunc()
-                    let mesh = Mesh(mesh: m)
+                    let mesh = Mesh(mesh: m, transform: transform)
                     if let submeshes = mdlMesh.submeshes as? [MDLSubmesh] {
                         for (index, s) in submeshes.enumerated() {
                             let submesh = Submesh(m.submeshes[index])
@@ -347,8 +348,8 @@ class Renderer: NSObject, MTKViewDelegate {
                 }
             }
         }
-        GZLogFunc(colorMaps.count)
-        GZLogFunc(normalMaps.count)
+        GZLogFunc(mtkMeshes.count)
+        GZLogFunc(mtkMeshes.count)
         return mtkMeshes
         
 //        let mdlVertexDescriptor = MTKModelIOVertexDescriptorFromMetal(mtlVertexDescriptor)
@@ -475,8 +476,9 @@ class Renderer: NSObject, MTKViewDelegate {
                 
                 renderEncoder.setDepthStencilState(depthState)
                 
+                renderEncoder.setVertexBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
+                renderEncoder.setFragmentBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
                 for mesh in meshes {
-                    let transform = MDLTransform.globalTransform(with:mesh.1, atTime:0)
                     let rotationAxis = SIMD3<Float>(0, 1, 0)
                     let modelMatrix =
                     simd_mul(
@@ -484,15 +486,13 @@ class Renderer: NSObject, MTKViewDelegate {
                         .identity(),
                         simd_mul(
                             matrix4x4_rotation(radians: rotation, axis: rotationAxis),
-                            transform
+                            mesh.0.transform
                             //                matrix4x4_translation(0, 0, 0)
                         )
                     )
                     mesh.0.meshUniforms = MeshUniforms(modelMatrix: modelMatrix, normalMatrix: modelMatrix.upperLeft)
                     
-                    renderEncoder.setVertexBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
                     renderEncoder.setVertexBytes(&mesh.0.meshUniforms, length: MemoryLayout<MeshUniforms>.stride, index: BufferIndex.meshUniforms.rawValue)
-                    renderEncoder.setFragmentBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
                 
                     for (index, element) in mesh.0.mesh.vertexDescriptor.layouts.enumerated() {
                         guard let layout = element as? MDLVertexBufferLayout else {
