@@ -96,9 +96,12 @@ fragment float4 fragmentShader(ColorInOut in [[stage_in]],
                                       in.worldNormal) * normalValue;
     normalDirection = normalize(normalDirection);
     
-    float3 lightPosition = float3(-1, 0, 0);
+    float3 lightPosition = float3(-1, 0, 1);
     float3 lightDirection = normalize(-lightPosition);
     float diffuseIntensity = saturate(-dot(lightDirection, normalDirection));
+    if (diffuseIntensity < 0.1) {
+        diffuseIntensity = 0.1;
+    }
     
     float3 spotlightPosition = float3( 30, 10, 40);
     float3 lightColor = float3(1, 0, 0);

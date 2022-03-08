@@ -116,10 +116,10 @@ class Renderer: NSObject, MTKViewDelegate {
         
 //        let usdz = "toy_biplane"
 //        let usdz = "toy_car"
-        let usdz = "toy_drummer"
+//        let usdz = "toy_drummer"
 //        let usdz = "tv_retro"
 //        let usdz = "gramophone"
-//        let usdz = "toy_robot_vintage"
+        let usdz = "toy_robot_vintage"
 //        let usdz = "LemonMeringuePie"
 //        let usdz = "AirForce"
 //        let usdz = "PegasusTrail"
@@ -435,7 +435,7 @@ class Renderer: NSObject, MTKViewDelegate {
         uniforms[0].projectionMatrix = projectionMatrix
         
 //        GZLogFunc(transform)
-        let viewMatrix = matrix4x4_translation(0.0, -4.00, -20.5)
+        let viewMatrix = matrix4x4_translation(0.0, -11.00, -30.5)
         uniforms[0].viewMatrix = viewMatrix
  
 //        rotation += 0.005
