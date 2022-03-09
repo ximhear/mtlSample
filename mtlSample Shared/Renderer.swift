@@ -25,13 +25,41 @@ class Mesh {
     var mesh: MTKMesh
     var submeshes: [Submesh] = []
     var meshUniforms: MeshUniforms
-    var transform: matrix_float4x4
+    let defaultTransform: float4x4
+    let duration: Float
+    let keyTransforms: [float4x4]
+    let fps: Int
     
-    init(mesh: MTKMesh, transform: matrix_float4x4) {
+    init(mesh: MTKMesh, object: MDLObject, startTime: TimeInterval, endTime: TimeInterval, fps: Int) {
         self.mesh = mesh
+        self.fps = fps
         self.meshUniforms = MeshUniforms(modelMatrix: .identity(), normalMatrix: .init())
-        self.transform = transform
+        duration = Float(endTime - startTime)
+        if duration > 0 {
+            var timeStride = Array(stride(from: startTime, to: endTime, by: 1 / TimeInterval(fps)))
+            timeStride.append(endTime)
+            keyTransforms = Array(timeStride).map { time in
+                GZLogFunc(time)
+                return MDLTransform.globalTransform(with: object, atTime: time)
+            }
+        }
+        else {
+            keyTransforms = []
+        }
+        GZLogFunc(keyTransforms.count)
+        self.defaultTransform = MDLTransform.globalTransform(with: object, atTime: 0)
     }
+    
+    func transform(time: Float) -> float4x4 {
+        if keyTransforms.count > 0 {
+            let frame = Int(fmod(time, duration) * Float(fps))
+            if frame < keyTransforms.count {
+                return keyTransforms[frame]
+            }
+        }
+        return defaultTransform
+    }
+    
 }
 
 class Submesh {
@@ -77,8 +105,12 @@ class Renderer: NSObject, MTKViewDelegate {
     var metalicMaps: [String: MTLTexture] = [:]
     var occlusionMaps: [String: MTLTexture] = [:]
     
+    var fps: Int
+    var currentTime: Float = 0
+    
     init?(metalKitView: MTKView) {
         self.device = metalKitView.device!
+        self.fps = metalKitView.preferredFramesPerSecond
         guard let queue = self.device.makeCommandQueue() else { return nil }
         self.commandQueue = queue
         
@@ -251,6 +283,9 @@ class Renderer: NSObject, MTKViewDelegate {
         let mdlVertexDescriptor = self.defaultVertexDescriptor
         
         let asset = MDLAsset(url: url!, vertexDescriptor: mdlVertexDescriptor, bufferAllocator: metalAllocator)
+        GZLogFunc(asset.startTime)
+        GZLogFunc(asset.endTime)
+        GZLogFunc()
         asset.loadTextures()
         var mtkMeshes = [(Mesh, MDLMesh)]()
          
@@ -263,7 +298,6 @@ class Renderer: NSObject, MTKViewDelegate {
         
         if let meshes = asset.childObjects(of: MDLMesh.self) as? [MDLMesh], meshes.count > 0 {
             for mdlMesh in meshes {
-                let transform = MDLTransform.globalTransform(with:mdlMesh, atTime:0)
 //                GZLogFunc(mdlMesh.transform?.minimumTime)
 //                GZLogFunc(mdlMesh.transform?.localTransform!(atTime:0))
                 
@@ -274,7 +308,8 @@ class Renderer: NSObject, MTKViewDelegate {
 //                    GZLogFunc(m.submeshes.count)
 //                    GZLogFunc(mdlMesh.submeshes?.count)
 //                    GZLogFunc()
-                    let mesh = Mesh(mesh: m, transform: transform)
+                    let mesh = Mesh(mesh: m, object: mdlMesh, startTime: asset.startTime,
+                                    endTime: asset.endTime, fps: fps)
                     if let submeshes = mdlMesh.submeshes as? [MDLSubmesh] {
                         for (index, s) in submeshes.enumerated() {
                             let submesh = Submesh(m.submeshes[index])
@@ -486,7 +521,7 @@ class Renderer: NSObject, MTKViewDelegate {
                         .identity(),
                         simd_mul(
                             matrix4x4_rotation(radians: rotation, axis: rotationAxis),
-                            mesh.0.transform
+                            mesh.0.transform(time: currentTime)
                             //                matrix4x4_translation(0, 0, 0)
                         )
                     )
@@ -529,6 +564,7 @@ class Renderer: NSObject, MTKViewDelegate {
             
             commandBuffer.commit()
             rotation += 0.005
+            currentTime += 1 / Float(fps)
         }
     }
     
