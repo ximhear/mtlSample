@@ -160,6 +160,10 @@ class Renderer: NSObject, MTKViewDelegate {
 //        let usdz = "fender_stratocaster"
 //        let usdz = "flower_tulip"
 //        let usdz = "wateringcan"
+//        let usdz = "SeinfeldSetReplica_usdz"
+//        let usdz = "Procedural_Animated_Push_Pin_-_WAVE"
+//        let usdz = "phoenix_bird"
+//        let usdz = "Medieval_Fantasy_Book"
         do {
             meshes = try self.buildMesh(device: device, mtlVertexDescriptor: mtlVertexDescriptor, usdz: usdz)
         } catch {
