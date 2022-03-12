@@ -60,6 +60,10 @@
 		EC2C334B27C3DE5000C1E6F5 /* tv_retro.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC2C334927C3DE5000C1E6F5 /* tv_retro.usdz */; };
 		EC2C334D27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */; };
 		EC2C334E27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */; };
+		ECF5213927DC44F2006693E5 /* EnvironmentObj.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECF5213827DC44F2006693E5 /* EnvironmentObj.swift */; };
+		ECF5213A27DC44F2006693E5 /* EnvironmentObj.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECF5213827DC44F2006693E5 /* EnvironmentObj.swift */; };
+		ECF5213C27DC870D006693E5 /* Environment.metal in Sources */ = {isa = PBXBuildFile; fileRef = ECF5213B27DC870D006693E5 /* Environment.metal */; };
+		ECF5213D27DC870D006693E5 /* Environment.metal in Sources */ = {isa = PBXBuildFile; fileRef = ECF5213B27DC870D006693E5 /* Environment.metal */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -96,6 +100,8 @@
 		EC2C334627C3D36F00C1E6F5 /* GZLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GZLog.swift; sourceTree = "<group>"; };
 		EC2C334927C3DE5000C1E6F5 /* tv_retro.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = tv_retro.usdz; sourceTree = "<group>"; };
 		EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = toy_biplane.usdz; sourceTree = "<group>"; };
+		ECF5213827DC44F2006693E5 /* EnvironmentObj.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentObj.swift; sourceTree = "<group>"; };
+		ECF5213B27DC870D006693E5 /* Environment.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Environment.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,6 +142,8 @@
 				EC2C334627C3D36F00C1E6F5 /* GZLog.swift */,
 				EC2C331027C3D27E00C1E6F5 /* Shaders.metal */,
 				EC2C331127C3D27E00C1E6F5 /* Renderer.swift */,
+				ECF5213827DC44F2006693E5 /* EnvironmentObj.swift */,
+				ECF5213B27DC870D006693E5 /* Environment.metal */,
 				EC2C334327C3D2BF00C1E6F5 /* toy_car.usdz */,
 				EC2C334927C3DE5000C1E6F5 /* tv_retro.usdz */,
 				EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */,
@@ -330,7 +338,9 @@
 				EC2C333327C3D27F00C1E6F5 /* Shaders.metal in Sources */,
 				EC2C331E27C3D27F00C1E6F5 /* GameViewController.swift in Sources */,
 				EC2C331C27C3D27F00C1E6F5 /* AppDelegate.swift in Sources */,
+				ECF5213C27DC870D006693E5 /* Environment.metal in Sources */,
 				EC2C334727C3D36F00C1E6F5 /* GZLog.swift in Sources */,
+				ECF5213927DC44F2006693E5 /* EnvironmentObj.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -342,7 +352,9 @@
 				EC2C333427C3D27F00C1E6F5 /* Shaders.metal in Sources */,
 				EC2C332E27C3D27F00C1E6F5 /* GameViewController.swift in Sources */,
 				EC2C332C27C3D27F00C1E6F5 /* AppDelegate.swift in Sources */,
+				ECF5213D27DC870D006693E5 /* Environment.metal in Sources */,
 				EC2C334827C3D36F00C1E6F5 /* GZLog.swift in Sources */,
+				ECF5213A27DC44F2006693E5 /* EnvironmentObj.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -82,8 +82,9 @@ class Renderer: NSObject, MTKViewDelegate {
     public let device: MTLDevice
     let commandQueue: MTLCommandQueue
     var dynamicUniformBuffer: MTLBuffer
-    var pipelineState: MTLRenderPipelineState
+    var pipelineState: MTLRenderPipelineState!
     var depthState: MTLDepthStencilState
+    let library: MTLLibrary
     
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
     
@@ -108,6 +109,8 @@ class Renderer: NSObject, MTKViewDelegate {
     var fps: Int
     var currentTime: Float = 0
     
+    let environment: EnvironmentObj
+    
     init?(metalKitView: MTKView) {
         self.device = metalKitView.device!
         self.fps = metalKitView.preferredFramesPerSecond
@@ -127,24 +130,30 @@ class Renderer: NSObject, MTKViewDelegate {
         metalKitView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
         metalKitView.sampleCount = 1
         
-        let mtlVertexDescriptor = Renderer.buildMetalVertexDescriptor()
-        
-        do {
-            pipelineState = try Renderer.buildRenderPipelineWithDevice(device: device,
-                                                                       metalKitView: metalKitView,
-                                                                       mtlVertexDescriptor: mtlVertexDescriptor)
-        } catch {
-            print("Unable to compile render pipeline state.  Error info: \(error)")
-            return nil
-        }
-        
         let depthStateDescriptor = MTLDepthStencilDescriptor()
         depthStateDescriptor.depthCompareFunction = MTLCompareFunction.less
         depthStateDescriptor.isDepthWriteEnabled = true
         guard let state = device.makeDepthStencilState(descriptor:depthStateDescriptor) else { return nil }
         depthState = state
         
+        guard let lib = device.makeDefaultLibrary() else {
+            GZLogFunc("library is nil")
+            return nil
+        }
+        library = lib
+        environment = EnvironmentObj(textureName: nil, metalView: metalKitView, device: device, library: library)
+        
         super.init()
+        
+        let mtlVertexDescriptor = Renderer.buildMetalVertexDescriptor()
+        do {
+            pipelineState = try buildRenderPipelineWithDevice(device: device,
+                                                              metalKitView: metalKitView,
+                                                              mtlVertexDescriptor: mtlVertexDescriptor)
+        } catch {
+            GZLogFunc("Unable to compile render pipeline state.  Error info: \(error)")
+            return nil
+        }
         
 //        let usdz = "toy_biplane"
 //        let usdz = "toy_car"
@@ -216,15 +225,13 @@ class Renderer: NSObject, MTKViewDelegate {
         return mtlVertexDescriptor
     }
     
-    class func buildRenderPipelineWithDevice(device: MTLDevice,
+    func buildRenderPipelineWithDevice(device: MTLDevice,
                                              metalKitView: MTKView,
                                              mtlVertexDescriptor: MTLVertexDescriptor) throws -> MTLRenderPipelineState {
         /// Build a render state pipeline object
         
-        let library = device.makeDefaultLibrary()
-        
-        let vertexFunction = library?.makeFunction(name: "vertexShader")
-        let fragmentFunction = library?.makeFunction(name: "fragmentShader")
+        let vertexFunction = library.makeFunction(name: "vertexShader")
+        let fragmentFunction = library.makeFunction(name: "fragmentShader")
         
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
         pipelineDescriptor.label = "RenderPipeline"
@@ -556,6 +563,8 @@ class Renderer: NSObject, MTKViewDelegate {
                         
                     }
                 }
+                
+                environment.render(renderEncoder: renderEncoder, uniforms: uniforms[0])
                 
                 renderEncoder.popDebugGroup()
                 
