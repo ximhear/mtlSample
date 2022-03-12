@@ -76,11 +76,14 @@ vertex ColorInOut vertexShader(Vertex in [[stage_in]],
 
 fragment float4 fragmentShader(ColorInOut in [[stage_in]],
                                constant Uniforms & uniforms [[ buffer(BufferIndexUniforms) ]],
+                               constant float4 &cameraPosition [[ buffer(BufferIndexCamera) ]],
                                texture2d<float> colorMap     [[ texture(TextureIndexColor) ]],
                                texture2d<float> normalMap     [[ texture(TextureIndexNormal) ]],
                                texture2d<float> roughMap     [[ texture(TextureIndexRough) ]],
                                texture2d<float> metalMap     [[ texture(TextureIndexMetalic) ]],
-                               texture2d<float> occulusionMap     [[ texture(TextureIndexOcculusion) ]]
+                               texture2d<float> occulusionMap     [[ texture(TextureIndexOcculusion) ]],
+                               texturecube<float> environmentMap     [[ texture(TextureIndexEnvironment) ]],
+                               texturecube<float> environmentDiffuseMap     [[ texture(TextureIndexEnvironmentDiffuse) ]]
                                )
 {
     constexpr sampler colorSampler(mip_filter::linear,
@@ -112,7 +115,7 @@ fragment float4 fragmentShader(ColorInOut in [[stage_in]],
     
     float3 rough   = float3(1) - roughMap.sample(colorSampler, in.texCoord.xy).rrr;
     float3 metalic   = float3(1) - metalMap.sample(colorSampler, in.texCoord.xy).rrr;
-    float3 occulusion = float3(1) - occulusionMap.sample(colorSampler, in.texCoord.xy).rrr;
+    float occulusion = occulusionMap.sample(colorSampler, in.texCoord.xy).r;
 
     float3 color = 0;
     {
@@ -128,5 +131,17 @@ fragment float4 fragmentShader(ColorInOut in [[stage_in]],
             color *= attenuation;
         }
     }
-    return float4(baseColor, 1) * diffuseIntensity + float4(color, 1);
+    
+    float3 viewDirection = in.worldPosition.xyz - cameraPosition.xyz;
+    float3 envTexCoord = reflect(viewDirection, in.worldNormal);
+    float4 envColor = environmentMap.sample(colorSampler, envTexCoord);
+   
+    float4 envDiffuse = environmentDiffuseMap.sample(colorSampler, normalDirection);
+    
+//    float4 copper = float4(0.86, 0.7, 0.48, 1);
+    float4 ret = envDiffuse * float4(baseColor, 1) * diffuseIntensity + float4(color, 1);
+//    return float4(occulusion, occulusion, occulusion, 1);
+//    return envColor * occulusion;
+//    return envDiffuse * occulusion;
+    return ret * occulusion;
 }

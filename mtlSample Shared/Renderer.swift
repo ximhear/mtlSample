@@ -110,6 +110,7 @@ class Renderer: NSObject, MTKViewDelegate {
     var currentTime: Float = 0
     
     let environment: EnvironmentObj
+    var cameraPosition: SIMD4<Float> = [0, 0, 0, 1]
     
     init?(metalKitView: MTKView) {
         self.device = metalKitView.device!
@@ -141,7 +142,7 @@ class Renderer: NSObject, MTKViewDelegate {
             return nil
         }
         library = lib
-        environment = EnvironmentObj(textureName: nil, metalView: metalKitView, device: device, library: library)
+        environment = EnvironmentObj(textureName: "sky", metalView: metalKitView, device: device, library: library)
         
         super.init()
         
@@ -481,7 +482,8 @@ class Renderer: NSObject, MTKViewDelegate {
         uniforms[0].projectionMatrix = projectionMatrix
         
 //        GZLogFunc(transform)
-        let viewMatrix = matrix4x4_translation(0.0, -11.00, -30.5)
+        cameraPosition = [0.0, 11.00, 30.5, 1]
+        let viewMatrix = matrix4x4_translation(-cameraPosition.x, -cameraPosition.y, -cameraPosition.z)
         uniforms[0].viewMatrix = viewMatrix
  
 //        rotation += 0.005
@@ -524,6 +526,8 @@ class Renderer: NSObject, MTKViewDelegate {
                 
                 renderEncoder.setVertexBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
                 renderEncoder.setFragmentBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
+                renderEncoder.setFragmentBytes(&cameraPosition, length: MemoryLayout<SIMD4<Float>>.stride, index: BufferIndex.camera.rawValue)
+                renderEncoder.setFragmentTexture(environment.diffuseTexture, index: TextureIndex.environmentDiffuse.rawValue)
                 for mesh in meshes {
                     let rotationAxis = SIMD3<Float>(0, 1, 0)
                     let modelMatrix =
@@ -554,6 +558,8 @@ class Renderer: NSObject, MTKViewDelegate {
                     for submesh in mesh.0.submeshes {
                         renderEncoder.setFragmentTexture(submesh.colorMap, index: TextureIndex.color.rawValue)
                         renderEncoder.setFragmentTexture(submesh.normalMap, index: TextureIndex.normal.rawValue)
+                        renderEncoder.setFragmentTexture(submesh.occlusionMap, index: TextureIndex.occulusion.rawValue)
+                        renderEncoder.setFragmentTexture(environment.texture, index: TextureIndex.environment.rawValue)
                         
                         renderEncoder.drawIndexedPrimitives(type: submesh.submesh.primitiveType,
                                                             indexCount: submesh.submesh.indexCount,
@@ -564,7 +570,7 @@ class Renderer: NSObject, MTKViewDelegate {
                     }
                 }
                 
-                environment.render(renderEncoder: renderEncoder, uniforms: uniforms[0])
+                environment.render(renderEncoder: renderEncoder, uniforms: uniforms[0], rotation: rotation)
                 
                 renderEncoder.popDebugGroup()
                 

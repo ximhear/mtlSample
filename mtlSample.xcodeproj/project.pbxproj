@@ -64,6 +64,12 @@
 		ECF5213A27DC44F2006693E5 /* EnvironmentObj.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECF5213827DC44F2006693E5 /* EnvironmentObj.swift */; };
 		ECF5213C27DC870D006693E5 /* Environment.metal in Sources */ = {isa = PBXBuildFile; fileRef = ECF5213B27DC870D006693E5 /* Environment.metal */; };
 		ECF5213D27DC870D006693E5 /* Environment.metal in Sources */ = {isa = PBXBuildFile; fileRef = ECF5213B27DC870D006693E5 /* Environment.metal */; };
+		ECF5213F27DCCB19006693E5 /* Textures.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ECF5213E27DCCB19006693E5 /* Textures.xcassets */; };
+		ECF5214027DCCB19006693E5 /* Textures.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ECF5213E27DCCB19006693E5 /* Textures.xcassets */; };
+		ECF5214727DCFFD9006693E5 /* irradiance.png in Resources */ = {isa = PBXBuildFile; fileRef = ECF5214527DCFFD9006693E5 /* irradiance.png */; };
+		ECF5214827DCFFD9006693E5 /* irradiance.png in Resources */ = {isa = PBXBuildFile; fileRef = ECF5214527DCFFD9006693E5 /* irradiance.png */; };
+		ECF5214927DCFFD9006693E5 /* cube-sky.png in Resources */ = {isa = PBXBuildFile; fileRef = ECF5214627DCFFD9006693E5 /* cube-sky.png */; };
+		ECF5214A27DCFFD9006693E5 /* cube-sky.png in Resources */ = {isa = PBXBuildFile; fileRef = ECF5214627DCFFD9006693E5 /* cube-sky.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -102,6 +108,9 @@
 		EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = toy_biplane.usdz; sourceTree = "<group>"; };
 		ECF5213827DC44F2006693E5 /* EnvironmentObj.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentObj.swift; sourceTree = "<group>"; };
 		ECF5213B27DC870D006693E5 /* Environment.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Environment.metal; sourceTree = "<group>"; };
+		ECF5213E27DCCB19006693E5 /* Textures.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Textures.xcassets; sourceTree = "<group>"; };
+		ECF5214527DCFFD9006693E5 /* irradiance.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = irradiance.png; sourceTree = "<group>"; };
+		ECF5214627DCFFD9006693E5 /* cube-sky.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "cube-sky.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,6 +144,7 @@
 		EC2C330F27C3D27E00C1E6F5 /* mtlSample Shared */ = {
 			isa = PBXGroup;
 			children = (
+				ECF5214427DCFFD9006693E5 /* Textures */,
 				968342FB27DB10F00021B5F7 /* Medieval_Fantasy_Book.usdz */,
 				968342F827DB0FEA0021B5F7 /* phoenix_bird.usdz */,
 				968342F527DB0E4E0021B5F7 /* Procedural_Animated_Push_Pin_-_WAVE.usdz */,
@@ -160,6 +170,7 @@
 				963EEBE527C8D2BD00136263 /* wateringcan.usdz */,
 				EC2C331227C3D27E00C1E6F5 /* ShaderTypes.h */,
 				EC2C331327C3D27F00C1E6F5 /* Assets.xcassets */,
+				ECF5213E27DCCB19006693E5 /* Textures.xcassets */,
 			);
 			path = "mtlSample Shared";
 			sourceTree = "<group>";
@@ -193,6 +204,15 @@
 				EC2C333227C3D27F00C1E6F5 /* mtlSample_macOS.entitlements */,
 			);
 			path = "mtlSample macOS";
+			sourceTree = "<group>";
+		};
+		ECF5214427DCFFD9006693E5 /* Textures */ = {
+			isa = PBXGroup;
+			children = (
+				ECF5214527DCFFD9006693E5 /* irradiance.png */,
+				ECF5214627DCFFD9006693E5 /* cube-sky.png */,
+			);
+			path = Textures;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -277,9 +297,11 @@
 				EC2C334A27C3DE5000C1E6F5 /* tv_retro.usdz in Resources */,
 				EC2C333727C3D27F00C1E6F5 /* ShaderTypes.h in Resources */,
 				963EEBF227C8D2BF00136263 /* cup_saucer_set.usdz in Resources */,
+				ECF5214727DCFFD9006693E5 /* irradiance.png in Resources */,
 				EC2C332127C3D27F00C1E6F5 /* Main.storyboard in Resources */,
 				963EEBEC27C8D2BF00136263 /* flower_tulip.usdz in Resources */,
 				EC0B9D6B27C7E79E00C18013 /* gramophone.usdz in Resources */,
+				ECF5214927DCFFD9006693E5 /* cube-sky.png in Resources */,
 				968342F627DB0E4E0021B5F7 /* Procedural_Animated_Push_Pin_-_WAVE.usdz in Resources */,
 				EC2C333927C3D27F00C1E6F5 /* Assets.xcassets in Resources */,
 				963EEBE327C8D18F00136263 /* PegasusTrail.usdz in Resources */,
@@ -296,6 +318,7 @@
 				963EEBEE27C8D2BF00136263 /* fender_stratocaster.usdz in Resources */,
 				963EEBF027C8D2BF00136263 /* chair_swan.usdz in Resources */,
 				EC2C334D27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */,
+				ECF5213F27DCCB19006693E5 /* Textures.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -305,6 +328,7 @@
 			files = (
 				EC2C334E27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */,
 				963EEBF327C8D2BF00136263 /* cup_saucer_set.usdz in Resources */,
+				ECF5214A27DCFFD9006693E5 /* cube-sky.png in Resources */,
 				963EEBE427C8D18F00136263 /* PegasusTrail.usdz in Resources */,
 				963EEBF127C8D2BF00136263 /* chair_swan.usdz in Resources */,
 				EC2C333127C3D27F00C1E6F5 /* Main.storyboard in Resources */,
@@ -312,11 +336,13 @@
 				EC2C334527C3D2BF00C1E6F5 /* toy_car.usdz in Resources */,
 				968342F727DB0E4E0021B5F7 /* Procedural_Animated_Push_Pin_-_WAVE.usdz in Resources */,
 				963EEBEB27C8D2BF00136263 /* wateringcan.usdz in Resources */,
+				ECF5214027DCCB19006693E5 /* Textures.xcassets in Resources */,
 				968342FD27DB10F00021B5F7 /* Medieval_Fantasy_Book.usdz in Resources */,
 				EC2C333A27C3D27F00C1E6F5 /* Assets.xcassets in Resources */,
 				EC2C334B27C3DE5000C1E6F5 /* tv_retro.usdz in Resources */,
 				EC0B9D6C27C7E79E00C18013 /* gramophone.usdz in Resources */,
 				968342FA27DB0FEA0021B5F7 /* phoenix_bird.usdz in Resources */,
+				ECF5214827DCFFD9006693E5 /* irradiance.png in Resources */,
 				963EEBED27C8D2BF00136263 /* flower_tulip.usdz in Resources */,
 				963EEBE027C8D18F00136263 /* AirForce.usdz in Resources */,
 				963EEBEF27C8D2BF00136263 /* fender_stratocaster.usdz in Resources */,

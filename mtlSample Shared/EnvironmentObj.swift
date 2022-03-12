@@ -11,6 +11,7 @@ import MetalKit
 class EnvironmentObj {
     let mesh: MTKMesh
     var texture: MTLTexture?
+    var diffuseTexture: MTLTexture?
     var pipelineState: MTLRenderPipelineState?
     var depthStencilState: MTLDepthStencilState?
     
@@ -34,6 +35,9 @@ class EnvironmentObj {
         depthStencilState = self.buildDepthStencilState(device: device)
         
         if let textureName = textureName {
+            texture = try? loadCubeTexture(imageName: textureName, device: device)
+//            loadIrridianceMap(imageName: "cube-sky.png", device: device)
+            diffuseTexture = try? loadCubeTexture(imageName: "cube-sky.png", device: device)
         }
         else {
             texture = loadGeneratedSkyboxTexture(dimensions: [256, 256], device: device)
@@ -84,12 +88,12 @@ class EnvironmentObj {
         return texture
     }
     
-    func render(renderEncoder: MTLRenderCommandEncoder, uniforms: Uniforms) {
+    func render(renderEncoder: MTLRenderCommandEncoder, uniforms: Uniforms, rotation: Float) {
         renderEncoder.setRenderPipelineState(self.pipelineState!)
         renderEncoder.setDepthStencilState(depthStencilState!)
         renderEncoder.setVertexBuffer(mesh.vertexBuffers[0].buffer, offset: 0, index: 0)
         
-        var viewMatrix = uniforms.viewMatrix
+        var viewMatrix = uniforms.viewMatrix * matrix4x4_rotation(radians: rotation, axis: [0, 1, 0])
         viewMatrix.columns.3 = [0, 0, 0, 1]
         var viewProjectionMatrix = uniforms.projectionMatrix * viewMatrix
         renderEncoder.setVertexBytes(&viewProjectionMatrix, length: MemoryLayout<float4x4>.stride, index: 1)
@@ -102,5 +106,32 @@ class EnvironmentObj {
                                             indexType: submesh.indexType,
                                             indexBuffer: submesh.indexBuffer.buffer,
                                             indexBufferOffset: 0)
+    }
+    
+    func loadCubeTexture(imageName: String, device: MTLDevice) throws -> MTLTexture {
+        let textureLoader = MTKTextureLoader(device: device)
+        if let texture = MDLTexture(cubeWithImagesNamed: [imageName]) {
+            let options: [MTKTextureLoader.Option: Any] =
+            [.origin: MTKTextureLoader.Origin.topLeft,
+             .SRGB: false,
+             .generateMipmaps: NSNumber(booleanLiteral: false)]
+            return try textureLoader.newTexture(texture: texture, options: options)
+        }
+        let texture = try textureLoader.newTexture(name: imageName, scaleFactor: 1.0,
+                                                   bundle: .main)
+        return texture
+    }
+    
+    func loadIrridianceMap(imageName: String, device: MTLDevice) {
+        GZLogFunc(imageName)
+        if let texture = MDLTexture(cubeWithImagesNamed: [imageName]) {
+//            let options: [MTKTextureLoader.Option: Any] =
+//            [.origin: MTKTextureLoader.Origin.topLeft,
+//             .SRGB: false,
+//             .generateMipmaps: NSNumber(booleanLiteral: false)]
+            let irridiance = MDLTexture.irradianceTextureCube(with: texture, name: nil, dimensions: [64, 64], roughness: 0.6)
+            let textureLoader = MTKTextureLoader(device: device)
+            diffuseTexture = try? textureLoader.newTexture(texture: irridiance, options: nil)
+        }
     }
 }
