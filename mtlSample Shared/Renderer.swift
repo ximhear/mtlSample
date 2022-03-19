@@ -63,16 +63,44 @@ class Mesh {
 }
 
 class Submesh {
-    var colorMap: MTLTexture?
-    var normalMap: MTLTexture?
-    var roughMap: MTLTexture?
-    var metalicMap: MTLTexture?
-    var occlusionMap: MTLTexture?
+    var colorMap: Int?
+    var normalMap: Int?
+    var roughMap: Int?
+    var metalicMap: Int?
+    var occlusionMap: Int?
+    
+    var texturesBuffer: MTLBuffer?
     
     var submesh: MTKSubmesh
     
     init(_ submesh: MTKSubmesh) {
         self.submesh = submesh
+    }
+    
+    func makeTexturesBuffer(device: MTLDevice, fragFunction: MTLFunction,
+                            textures: [Int: MTLTexture]
+    ) {
+        
+        let argumentEncoder = fragFunction.makeArgumentEncoder(bufferIndex: BufferIndex.textures.rawValue)
+        texturesBuffer = device.makeBuffer(length: argumentEncoder.encodedLength, options: [])
+        guard let b = texturesBuffer else { return }
+        b.label = "Textures"
+        argumentEncoder.setArgumentBuffer(b, offset: 0)
+        if let i = colorMap {
+            argumentEncoder.setTexture(textures[i], index: 0)
+        }
+        if let i = normalMap {
+            argumentEncoder.setTexture(textures[i], index: 1)
+        }
+        if let i = roughMap {
+            argumentEncoder.setTexture(textures[i], index: 2)
+        }
+        if let i = metalicMap {
+            argumentEncoder.setTexture(textures[i], index: 3)
+        }
+        if let i = occlusionMap {
+            argumentEncoder.setTexture(textures[i], index: 4)
+        }
     }
     
 }
@@ -99,11 +127,10 @@ class Renderer: NSObject, MTKViewDelegate {
     
     var meshes: [(Mesh, MDLMesh)] = []
     
-    var colorMaps: [Int: MTLTexture] = [:]
-    var normalMaps: [String: MTLTexture] = [:]
-    var roughMaps: [String: MTLTexture] = [:]
-    var metalicMaps: [String: MTLTexture] = [:]
-    var occlusionMaps: [String: MTLTexture] = [:]
+    var textures: [Int: MTLTexture] = [:]
+    
+    var fragFunction: MTLFunction!
+    var heap: MTLHeap?
     
     var fps: Int
     var currentTime: Float = 0
@@ -138,6 +165,9 @@ class Renderer: NSObject, MTKViewDelegate {
             return nil
         }
         
+        let library = device.makeDefaultLibrary()
+        fragFunction = library?.makeFunction(name: "fragmentShader")
+        
         let depthStateDescriptor = MTLDepthStencilDescriptor()
         depthStateDescriptor.depthCompareFunction = MTLCompareFunction.less
         depthStateDescriptor.isDepthWriteEnabled = true
@@ -171,6 +201,13 @@ class Renderer: NSObject, MTKViewDelegate {
             return nil
         }
         
+        heap = buildHeap()
+       
+        for mesh in meshes {
+            for submesh in mesh.0.submeshes {
+                submesh.makeTexturesBuffer(device: device, fragFunction: fragFunction, textures: textures)
+            }
+        }
     }
     
     class func buildMetalVertexDescriptor() -> MTLVertexDescriptor {
@@ -320,62 +357,62 @@ class Renderer: NSObject, MTKViewDelegate {
                             if let materials = s.material {
                                 if let t = materials.property(with: .baseColor)?.textureSamplerValue?.texture {
 //                                    GZLogFunc(t.hash)
-                                    if let tt = colorMaps[t.hash] {
+                                    if let tt = textures[t.hash] {
 //                                        GZLogFunc("texture \(t.hash) already exists.")
-                                        submesh.colorMap = tt
+                                        submesh.colorMap = t.hash
                                     }
                                     else {
                                         if let texture = try? textureLoader.newTexture(texture: t, options: textureLoaderOptions) {
-                                            colorMaps[t.hash] = texture
-                                            submesh.colorMap = texture
+                                            textures[t.hash] = texture
+                                            submesh.colorMap = t.hash
                                         }
                                     }
                                 }
                                 if let t = materials.property(with: .tangentSpaceNormal)?.textureSamplerValue?.texture {
-                                    if let tt = normalMaps[t.name] {
+                                    if let tt = textures[t.hash] {
 //                                        GZLogFunc("texture \(t.name) already exists.")
-                                        submesh.normalMap = tt
+                                        submesh.normalMap = t.hash
                                     }
                                     else {
                                         if let texture = try? textureLoader.newTexture(texture: t, options: textureLoaderOptions) {
-                                            normalMaps[t.name] = texture
-                                            submesh.normalMap = texture
+                                            textures[t.hash] = texture
+                                            submesh.normalMap = t.hash
                                         }
                                     }
                                 }
                                 if let t = materials.property(with: .roughness)?.textureSamplerValue?.texture {
-                                    if let tt = roughMaps[t.name] {
+                                    if let tt = textures[t.hash] {
 //                                        GZLogFunc("texture \(t.name) already exists.")
-                                        submesh.roughMap = tt
+                                        submesh.roughMap = t.hash
                                     }
                                     else {
                                         if let texture = try? textureLoader.newTexture(texture: t, options: textureLoaderOptions) {
-                                            roughMaps[t.name] = texture
-                                            submesh.roughMap = texture
+                                            textures[t.hash] = texture
+                                            submesh.roughMap = t.hash
                                         }
                                     }
                                 }
                                 if let t = materials.property(with: .metallic)?.textureSamplerValue?.texture {
-                                    if let tt = metalicMaps[t.name] {
+                                    if let tt = textures[t.hash] {
 //                                        GZLogFunc("texture \(t.name) already exists.")
-                                        submesh.metalicMap = tt
+                                        submesh.metalicMap = t.hash
                                     }
                                     else {
                                         if let texture = try? textureLoader.newTexture(texture: t, options: textureLoaderOptions) {
-                                            metalicMaps[t.name] = texture
-                                            submesh.metalicMap = texture
+                                            textures[t.hash] = texture
+                                            submesh.metalicMap = t.hash
                                         }
                                     }
                                 }
                                 if let t = materials.property(with: .ambientOcclusion)?.textureSamplerValue?.texture {
-                                    if let tt = occlusionMaps[t.name] {
+                                    if let tt = textures[t.hash] {
 //                                        GZLogFunc("texture \(t.name) already exists.")
-                                        submesh.occlusionMap = tt
+                                        submesh.occlusionMap = t.hash
                                     }
                                     else {
                                         if let texture = try? textureLoader.newTexture(texture: t, options: textureLoaderOptions) {
-                                            occlusionMaps[t.name] = texture
-                                            submesh.occlusionMap = texture
+                                            textures[t.hash] = texture
+                                            submesh.occlusionMap = t.hash
                                         }
                                     }
                                 }
@@ -403,6 +440,47 @@ class Renderer: NSObject, MTKViewDelegate {
 //
 //        let m = try MTKMesh(mesh:mdlMesh, device:device)
 //        return [m]
+    }
+    
+    func buildHeap() -> MTLHeap? {
+        let d = MTLHeapDescriptor()
+        let descriptors: [(Int, MTLTextureDescriptor)] = textures.map { ($0.key, MTLTextureDescriptor.descriptor(from: $0.value)) }
+        let sizeAndAligns = descriptors.map { device.heapTextureSizeAndAlign(descriptor: $0.1) }
+        d.size = sizeAndAligns.reduce(0) { a, b in
+            let n = b.size - (b.size & (b.align - 1)) + b.align
+            return a + n
+        }
+        if d.size == 0 {
+            return nil
+        }
+        guard let h = device.makeHeap(descriptor: d) else {
+            fatalError()
+        }
+        let heapTextures = descriptors.map { descriptor -> (Int, MTLTexture) in
+            descriptor.1.storageMode = d.storageMode
+            return (descriptor.0, h.makeTexture(descriptor: descriptor.1)!)
+        }
+        guard let commandBuffer = commandQueue.makeCommandBuffer(), let blitEncoder = commandBuffer.makeBlitCommandEncoder() else {
+            fatalError()
+        }
+        heapTextures.forEach { ht in
+            let tt = textures[ht.0]!
+            var region = MTLRegionMake2D(0, 0, tt.width, tt.height)
+            for level in 0..<tt.mipmapLevelCount {
+                for slice in 0..<tt.arrayLength {
+                    blitEncoder.copy(from: tt, sourceSlice: slice, sourceLevel: level, sourceOrigin: region.origin, sourceSize: region.size, to: ht.1, destinationSlice: slice, destinationLevel: level, destinationOrigin: region.origin)
+                }
+                region.size.width /= 2
+                region.size.height /= 2
+            }
+        }
+        blitEncoder.endEncoding()
+        commandBuffer.commit()
+        textures = [:]
+        heapTextures.forEach { ht in
+            textures[ht.0] = ht.1
+        }
+        return h
     }
     
     class func loadTexture(device: MTLDevice, usdz: String, semantic: MDLMaterialSemantic) throws -> MTLTexture {
@@ -515,6 +593,9 @@ class Renderer: NSObject, MTKViewDelegate {
                 
                 renderEncoder.setDepthStencilState(depthState)
                 
+                    if let h = heap {
+                        renderEncoder.useHeap(h)
+                    }
                 renderEncoder.setVertexBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
                 renderEncoder.setFragmentBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
                 for mesh in meshes {
@@ -545,8 +626,16 @@ class Renderer: NSObject, MTKViewDelegate {
                     }
                     
                     for submesh in mesh.0.submeshes {
-                        renderEncoder.setFragmentTexture(submesh.colorMap, index: TextureIndex.color.rawValue)
-                        renderEncoder.setFragmentTexture(submesh.normalMap, index: TextureIndex.normal.rawValue)
+                        renderEncoder.setFragmentBuffer(submesh.texturesBuffer, offset: 0, index: BufferIndex.textures.rawValue)
+//                        if let t = submesh.colorMap {
+//                            renderEncoder.useResource(textures[t]!, usage: .read)
+//                        }
+//                        if let t = submesh.normalMap {
+//                            renderEncoder.useResource(textures[t]!, usage: .read)
+//                        }
+                        
+//                        renderEncoder.setFragmentTexture(submesh.colorMap, index: TextureIndex.color.rawValue)
+//                        renderEncoder.setFragmentTexture(submesh.normalMap, index: TextureIndex.normal.rawValue)
                         
                         renderEncoder.drawIndexedPrimitives(type: submesh.submesh.primitiveType,
                                                             indexCount: submesh.submesh.indexCount,

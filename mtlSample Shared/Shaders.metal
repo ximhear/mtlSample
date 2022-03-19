@@ -74,21 +74,25 @@ vertex ColorInOut vertexShader(Vertex in [[stage_in]],
   return out;
 }
 
+struct Textures {
+    texture2d<float> colorMap;
+    texture2d<float> normalMap;
+    texture2d<float> roughMap;
+    texture2d<float> metalMap;
+    texture2d<float> occulusionMap;
+};
+
 fragment float4 fragmentShader(ColorInOut in [[stage_in]],
                                constant Uniforms & uniforms [[ buffer(BufferIndexUniforms) ]],
-                               texture2d<float> colorMap     [[ texture(TextureIndexColor) ]],
-                               texture2d<float> normalMap     [[ texture(TextureIndexNormal) ]],
-                               texture2d<float> roughMap     [[ texture(TextureIndexRough) ]],
-                               texture2d<float> metalMap     [[ texture(TextureIndexMetalic) ]],
-                               texture2d<float> occulusionMap     [[ texture(TextureIndexOcculusion) ]]
+                               constant Textures& textures [[ buffer(BufferIndexTextures)]]
                                )
 {
     constexpr sampler colorSampler(mip_filter::linear,
                                    mag_filter::linear,
                                    min_filter::linear);
 
-    float3 baseColor = colorMap.sample(colorSampler, in.texCoord.xy).xyz;
-    float3 normalValue   = normalMap.sample(colorSampler, in.texCoord.xy).rgb;
+    float3 baseColor = textures.colorMap.sample(colorSampler, in.texCoord.xy).xyz;
+    float3 normalValue   = textures.normalMap.sample(colorSampler, in.texCoord.xy).rgb;
     normalValue = normalValue * 2 - 1;
     normalValue = normalize(normalValue);
     float3 normalDirection = float3x3(in.worldTangent,
@@ -110,9 +114,9 @@ fragment float4 fragmentShader(ColorInOut in [[stage_in]],
     float3 lightAttenuation = float3(1.0, 0.5, 0);
     float coneAttenuation = 32;
     
-    float3 rough   = float3(1) - roughMap.sample(colorSampler, in.texCoord.xy).rrr;
-    float3 metalic   = float3(1) - metalMap.sample(colorSampler, in.texCoord.xy).rrr;
-    float3 occulusion = float3(1) - occulusionMap.sample(colorSampler, in.texCoord.xy).rrr;
+    float3 rough   = float3(1) - textures.roughMap.sample(colorSampler, in.texCoord.xy).rrr;
+    float3 metalic   = float3(1) - textures.metalMap.sample(colorSampler, in.texCoord.xy).rrr;
+    float3 occulusion = float3(1) - textures.occulusionMap.sample(colorSampler, in.texCoord.xy).rrr;
 
     float3 color = 0;
     {

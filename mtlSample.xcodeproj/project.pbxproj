@@ -60,6 +60,8 @@
 		EC2C334B27C3DE5000C1E6F5 /* tv_retro.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC2C334927C3DE5000C1E6F5 /* tv_retro.usdz */; };
 		EC2C334D27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */; };
 		EC2C334E27C3E45500C1E6F5 /* toy_biplane.usdz in Resources */ = {isa = PBXBuildFile; fileRef = EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */; };
+		ECECF80B27E63F6400B5802E /* MTLTextureDescriptorExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECECF80A27E63F6400B5802E /* MTLTextureDescriptorExt.swift */; };
+		ECECF80C27E63F6400B5802E /* MTLTextureDescriptorExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECECF80A27E63F6400B5802E /* MTLTextureDescriptorExt.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -96,6 +98,7 @@
 		EC2C334627C3D36F00C1E6F5 /* GZLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GZLog.swift; sourceTree = "<group>"; };
 		EC2C334927C3DE5000C1E6F5 /* tv_retro.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = tv_retro.usdz; sourceTree = "<group>"; };
 		EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = toy_biplane.usdz; sourceTree = "<group>"; };
+		ECECF80A27E63F6400B5802E /* MTLTextureDescriptorExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MTLTextureDescriptorExt.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -136,6 +139,7 @@
 				EC2C334627C3D36F00C1E6F5 /* GZLog.swift */,
 				EC2C331027C3D27E00C1E6F5 /* Shaders.metal */,
 				EC2C331127C3D27E00C1E6F5 /* Renderer.swift */,
+				ECECF80A27E63F6400B5802E /* MTLTextureDescriptorExt.swift */,
 				EC2C334327C3D2BF00C1E6F5 /* toy_car.usdz */,
 				EC2C334927C3DE5000C1E6F5 /* tv_retro.usdz */,
 				EC2C334C27C3E45500C1E6F5 /* toy_biplane.usdz */,
@@ -326,6 +330,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ECECF80B27E63F6400B5802E /* MTLTextureDescriptorExt.swift in Sources */,
 				EC2C333527C3D27F00C1E6F5 /* Renderer.swift in Sources */,
 				EC2C333327C3D27F00C1E6F5 /* Shaders.metal in Sources */,
 				EC2C331E27C3D27F00C1E6F5 /* GameViewController.swift in Sources */,
@@ -338,6 +343,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ECECF80C27E63F6400B5802E /* MTLTextureDescriptorExt.swift in Sources */,
 				EC2C333627C3D27F00C1E6F5 /* Renderer.swift in Sources */,
 				EC2C333427C3D27F00C1E6F5 /* Shaders.metal in Sources */,
 				EC2C332E27C3D27F00C1E6F5 /* GameViewController.swift in Sources */,
