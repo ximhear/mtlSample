@@ -40,7 +40,8 @@ typedef struct
 
 vertex ColorInOut vertexShader(Vertex in [[stage_in]],
                                constant Uniforms & uniforms [[ buffer(BufferIndexUniforms) ]],
-                               constant MeshUniforms & meshUniforms [[ buffer(BufferIndexMeshUniforms) ]])
+                               constant MeshUniforms & meshUniforms [[ buffer(BufferIndexMeshUniforms) ]],
+                               uint baseInstance [[base_instance]])
 {
     float4 position = float4(in.position, 1.0);
 //    out.position = uniforms.projectionMatrix * uniforms.modelViewMatrix * position;

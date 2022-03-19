@@ -14,7 +14,7 @@ import simd
 // The 256 byte aligned size of our uniform structure
 let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
 
-let maxBuffersInFlight = 3
+let maxBuffersInFlight = 1
 
 enum RendererError: Error {
     case badVertexDescriptor
@@ -25,12 +25,13 @@ class Mesh {
     var mesh: MTKMesh
     var submeshes: [Submesh] = []
     var meshUniforms: MeshUniforms
+    var meshUniformsBuffer: MTLBuffer!
     let defaultTransform: float4x4
     let duration: Float
     let keyTransforms: [float4x4]
     let fps: Int
     
-    init(mesh: MTKMesh, object: MDLObject, startTime: TimeInterval, endTime: TimeInterval, fps: Int) {
+    init(device: MTLDevice, mesh: MTKMesh, object: MDLObject, startTime: TimeInterval, endTime: TimeInterval, fps: Int) {
         self.mesh = mesh
         self.fps = fps
         self.meshUniforms = MeshUniforms(modelMatrix: .identity(), normalMatrix: .init())
@@ -48,6 +49,7 @@ class Mesh {
         }
         GZLogFunc(keyTransforms.count)
         self.defaultTransform = MDLTransform.globalTransform(with: object, atTime: 0)
+        meshUniformsBuffer = device.makeBuffer(length: MemoryLayout<MeshUniforms>.stride, options: [])
     }
     
     func transform(time: Float) -> float4x4 {
@@ -135,6 +137,8 @@ class Renderer: NSObject, MTKViewDelegate {
     var fps: Int
     var currentTime: Float = 0
     
+    var icb: MTLIndirectCommandBuffer!
+    
     init?(metalKitView: MTKView) {
         self.device = metalKitView.device!
         self.fps = metalKitView.preferredFramesPerSecond
@@ -202,12 +206,54 @@ class Renderer: NSObject, MTKViewDelegate {
         }
         
         heap = buildHeap()
-       
+
         for mesh in meshes {
             for submesh in mesh.0.submeshes {
                 submesh.makeTexturesBuffer(device: device, fragFunction: fragFunction, textures: textures)
             }
         }
+        initializeCommands()
+    }
+
+    func initializeCommands() {
+        let d = MTLIndirectCommandBufferDescriptor()
+        d.commandTypes = [.drawIndexed]
+        d.inheritBuffers = false
+        d.maxVertexBufferBindCount = 25
+        d.maxFragmentBufferBindCount = 25
+        d.inheritPipelineState = false
+
+        let count = meshes.reduce(0) { s, mesh in
+            s + mesh.0.submeshes.count
+        }
+        GZLogFunc(count)
+        GZLogFunc()
+        guard let icb = device.makeIndirectCommandBuffer(descriptor: d, maxCommandCount: count) else {
+            fatalError()
+        }
+        self.icb = icb
+        var submeshIndex: Int = 0
+        for mesh in meshes {
+            for submesh in mesh.0.submeshes {
+                let icbCommand = icb.indirectRenderCommandAt(submeshIndex)
+                icbCommand.setRenderPipelineState(pipelineState)
+                icbCommand.setVertexBuffer(dynamicUniformBuffer, offset: uniformBufferOffset, at: BufferIndex.uniforms.rawValue)
+                icbCommand.setFragmentBuffer(dynamicUniformBuffer, offset: uniformBufferOffset, at: BufferIndex.uniforms.rawValue)
+                icbCommand.setVertexBuffer(mesh.0.meshUniformsBuffer, offset: 0, at: BufferIndex.meshUniforms.rawValue)
+                icbCommand.setVertexBuffer(mesh.0.mesh.vertexBuffers[0].buffer, offset: 0, at: 0)
+                icbCommand.setFragmentBuffer(submesh.texturesBuffer!, offset: 0, at: BufferIndex.textures.rawValue)
+                icbCommand.drawIndexedPrimitives(submesh.submesh.primitiveType,
+                        indexCount: submesh.submesh.indexCount,
+                        indexType: submesh.submesh.indexType,
+                        indexBuffer: submesh.submesh.indexBuffer.buffer,
+                        indexBufferOffset: submesh.submesh.indexBuffer.offset,
+                        instanceCount: 1, baseVertex: 0, baseInstance: submeshIndex)
+
+                submeshIndex += 1
+            }
+        }
+        GZLogFunc(submeshIndex)
+        GZLogFunc()
     }
     
     class func buildMetalVertexDescriptor() -> MTLVertexDescriptor {
@@ -269,6 +315,7 @@ class Renderer: NSObject, MTKViewDelegate {
         pipelineDescriptor.vertexFunction = vertexFunction
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.vertexDescriptor = mtlVertexDescriptor
+        pipelineDescriptor.supportIndirectCommandBuffers = true
         
         pipelineDescriptor.colorAttachments[0].pixelFormat = metalKitView.colorPixelFormat
         pipelineDescriptor.depthAttachmentPixelFormat = metalKitView.depthStencilPixelFormat
@@ -349,7 +396,7 @@ class Renderer: NSObject, MTKViewDelegate {
 //                    GZLogFunc(m.submeshes.count)
 //                    GZLogFunc(mdlMesh.submeshes?.count)
 //                    GZLogFunc()
-                    let mesh = Mesh(mesh: m, object: mdlMesh, startTime: asset.startTime,
+                    let mesh = Mesh(device: device, mesh: m, object: mdlMesh, startTime: asset.startTime,
                                     endTime: asset.endTime, fps: fps)
                     if let submeshes = mdlMesh.submeshes as? [MDLSubmesh] {
                         for (index, s) in submeshes.enumerated() {
@@ -589,15 +636,18 @@ class Renderer: NSObject, MTKViewDelegate {
                 renderEncoder.setFrontFacing(.counterClockwise)
 //                renderEncoder.setTriangleFillMode(.lines)
                 
-                renderEncoder.setRenderPipelineState(pipelineState)
+//                renderEncoder.setRenderPipelineState(pipelineState)
                 
                 renderEncoder.setDepthStencilState(depthState)
                 
-                    if let h = heap {
-                        renderEncoder.useHeap(h)
-                    }
-                renderEncoder.setVertexBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
-                renderEncoder.setFragmentBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
+                if let h = heap {
+                    renderEncoder.useHeap(h)
+                }
+//                renderEncoder.setVertexBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
+//                renderEncoder.setFragmentBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
+                
+                renderEncoder.useResource(dynamicUniformBuffer, usage: .read)
+                var submeshCount = 0
                 for mesh in meshes {
                     let rotationAxis = SIMD3<Float>(0, 1, 0)
                     let modelMatrix =
@@ -611,41 +661,20 @@ class Renderer: NSObject, MTKViewDelegate {
                         )
                     )
                     mesh.0.meshUniforms = MeshUniforms(modelMatrix: modelMatrix, normalMatrix: modelMatrix.upperLeft)
-                    
-                    renderEncoder.setVertexBytes(&mesh.0.meshUniforms, length: MemoryLayout<MeshUniforms>.stride, index: BufferIndex.meshUniforms.rawValue)
-                
-                    for (index, element) in mesh.0.mesh.vertexDescriptor.layouts.enumerated() {
-                        guard let layout = element as? MDLVertexBufferLayout else {
-                            return
-                        }
-                        
-                        if layout.stride != 0 {
-                            let buffer = mesh.0.mesh.vertexBuffers[index]
-                            renderEncoder.setVertexBuffer(buffer.buffer, offset:buffer.offset, index: index)
-                        }
-                    }
+                    mesh.0.meshUniformsBuffer.contents().copyMemory(from: &mesh.0.meshUniforms, byteCount: MemoryLayout<MeshUniforms>.stride)
+                    renderEncoder.useResource(mesh.0.meshUniformsBuffer, usage: .read)
+                    renderEncoder.useResource(mesh.0.mesh.vertexBuffers[0].buffer, usage: .read)
                     
                     for submesh in mesh.0.submeshes {
-                        renderEncoder.setFragmentBuffer(submesh.texturesBuffer, offset: 0, index: BufferIndex.textures.rawValue)
-//                        if let t = submesh.colorMap {
-//                            renderEncoder.useResource(textures[t]!, usage: .read)
-//                        }
-//                        if let t = submesh.normalMap {
-//                            renderEncoder.useResource(textures[t]!, usage: .read)
-//                        }
-                        
-//                        renderEncoder.setFragmentTexture(submesh.colorMap, index: TextureIndex.color.rawValue)
-//                        renderEncoder.setFragmentTexture(submesh.normalMap, index: TextureIndex.normal.rawValue)
-                        
-                        renderEncoder.drawIndexedPrimitives(type: submesh.submesh.primitiveType,
-                                                            indexCount: submesh.submesh.indexCount,
-                                                            indexType: submesh.submesh.indexType,
-                                                            indexBuffer: submesh.submesh.indexBuffer.buffer,
-                                                            indexBufferOffset: submesh.submesh.indexBuffer.offset)
-                        
+                        renderEncoder.useResource(submesh.texturesBuffer!, usage: .read)
+                        renderEncoder.useResource(submesh.submesh.indexBuffer.buffer, usage: .read)
                     }
+                    
+                    submeshCount += mesh.0.submeshes.count
                 }
                 
+//                GZLogFunc(submeshCount)
+                renderEncoder.executeCommandsInBuffer(icb, range: 0..<submeshCount)
                 renderEncoder.popDebugGroup()
                 
                 renderEncoder.endEncoding()
