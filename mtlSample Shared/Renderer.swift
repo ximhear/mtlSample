@@ -799,18 +799,19 @@ class Renderer: NSObject, MTKViewDelegate {
                     mesh.0.meshUniforms = MeshUniforms(modelMatrix: modelMatrix, normalMatrix: modelMatrix.upperLeft)
 //                    mesh.0.meshUniformsBuffer.contents().copyMemory(from: &mesh.0.meshUniforms, byteCount: MemoryLayout<MeshUniforms>.stride)
                     
-                    var meshUniformsPointer = meshUniformsBuffer.contents().bindMemory(to: MeshUniforms.self, capacity: totalCount)
-                    var meshUniforms = meshUniformsPointer.advanced(by: submeshCount)
-                    meshUniforms.pointee = mesh.0.meshUniforms
 
                     renderEncoder.useResource(mesh.0.mesh.vertexBuffers[0].buffer, usage: .read)
                     
                     for submesh in mesh.0.submeshes {
+                        var meshUniformsPointer = meshUniformsBuffer.contents().bindMemory(to: MeshUniforms.self, capacity: totalCount)
+                        var meshUniforms = meshUniformsPointer.advanced(by: submeshCount)
+                        meshUniforms.pointee = mesh.0.meshUniforms
+                        
                         renderEncoder.useResource(submesh.texturesBuffer!, usage: .read)
                         renderEncoder.useResource(submesh.submesh.indexBuffer.buffer, usage: .read)
+                        submeshCount += 1
                     }
                     
-                    submeshCount += mesh.0.submeshes.count
                 }
                 
 //                GZLogFunc(submeshCount)
