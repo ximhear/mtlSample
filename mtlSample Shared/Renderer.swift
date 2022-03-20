@@ -25,7 +25,7 @@ class Mesh {
     var mesh: MTKMesh
     var submeshes: [Submesh] = []
     var meshUniforms: MeshUniforms
-    var meshUniformsBuffer: MTLBuffer!
+//    var meshUniformsBuffer: MTLBuffer!
     let defaultTransform: float4x4
     let duration: Float
     let keyTransforms: [float4x4]
@@ -49,7 +49,7 @@ class Mesh {
         }
         GZLogFunc(keyTransforms.count)
         self.defaultTransform = MDLTransform.globalTransform(with: object, atTime: 0)
-        meshUniformsBuffer = device.makeBuffer(length: MemoryLayout<MeshUniforms>.stride, options: [])
+//        meshUniformsBuffer = device.makeBuffer(length: MemoryLayout<MeshUniforms>.stride, options: [])
     }
     
     func transform(time: Float) -> float4x4 {
@@ -223,8 +223,8 @@ class Renderer: NSObject, MTKViewDelegate {
                 submesh.makeTexturesBuffer(device: device, fragFunction: fragFunction, textures: textures)
             }
         }
-        initializeCommands()
         initializeMeshUniformsBuffer()
+        initializeCommands()
     }
 
     func initializeMeshUniformsBuffer() {
@@ -276,7 +276,7 @@ class Renderer: NSObject, MTKViewDelegate {
                 icbCommand.setRenderPipelineState(pipelineState)
                 icbCommand.setVertexBuffer(dynamicUniformBuffer, offset: uniformBufferOffset, at: BufferIndex.uniforms.rawValue)
                 icbCommand.setFragmentBuffer(dynamicUniformBuffer, offset: uniformBufferOffset, at: BufferIndex.uniforms.rawValue)
-                icbCommand.setVertexBuffer(mesh.0.meshUniformsBuffer, offset: 0, at: BufferIndex.meshUniforms.rawValue)
+                icbCommand.setVertexBuffer(meshUniformsBuffer, offset: 0, at: BufferIndex.meshUniforms.rawValue)
                 icbCommand.setVertexBuffer(mesh.0.mesh.vertexBuffers[0].buffer, offset: 0, at: 0)
                 icbCommand.setFragmentBuffer(submesh.texturesBuffer!, offset: 0, at: BufferIndex.textures.rawValue)
                 icbCommand.drawIndexedPrimitives(submesh.submesh.primitiveType,
@@ -795,7 +795,7 @@ class Renderer: NSObject, MTKViewDelegate {
                         )
                     )
                     mesh.0.meshUniforms = MeshUniforms(modelMatrix: modelMatrix, normalMatrix: modelMatrix.upperLeft)
-                    mesh.0.meshUniformsBuffer.contents().copyMemory(from: &mesh.0.meshUniforms, byteCount: MemoryLayout<MeshUniforms>.stride)
+//                    mesh.0.meshUniformsBuffer.contents().copyMemory(from: &mesh.0.meshUniforms, byteCount: MemoryLayout<MeshUniforms>.stride)
                     
                     var meshUniformsPointer = meshUniformsBuffer.contents().bindMemory(to: MeshUniforms.self, capacity: totalCount)
                     var meshUniforms = meshUniformsPointer.advanced(by: submeshCount)
