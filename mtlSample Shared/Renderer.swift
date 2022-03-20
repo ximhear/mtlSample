@@ -138,6 +138,12 @@ class Renderer: NSObject, MTKViewDelegate {
     var currentTime: Float = 0
     
     var icb: MTLIndirectCommandBuffer!
+    let icbPipelineState: MTLComputePipelineState!
+    let icbComputeFunction: MTLFunction!
+    var icbBuffer: MTLBuffer!
+    var meshUniformsBuffer: MTLBuffer!
+    var modelsBuffer: MTLBuffer!
+    var drawArgumentsBuffer: MTLBuffer!
     
     init?(metalKitView: MTKView) {
         self.device = metalKitView.device!
@@ -178,8 +184,13 @@ class Renderer: NSObject, MTKViewDelegate {
         guard let state = device.makeDepthStencilState(descriptor:depthStateDescriptor) else { return nil }
         depthState = state
         
+        icbComputeFunction = library!.makeFunction(name: "encodeCommands")
+        icbPipelineState = Renderer.bulidComputePipelineState(device: device, function: icbComputeFunction)
+        
         super.init()
         
+        
+
 //        let usdz = "toy_biplane"
 //        let usdz = "toy_car"
 //        let usdz = "toy_drummer"
@@ -213,8 +224,34 @@ class Renderer: NSObject, MTKViewDelegate {
             }
         }
         initializeCommands()
+        initializeMeshUniformsBuffer()
     }
 
+    func initializeMeshUniformsBuffer() {
+        
+        let count = meshes.reduce(0) { s, mesh in
+            s + mesh.0.submeshes.count
+        }
+        var submeshIndex: Int = 0
+        let bufferLength = count * MemoryLayout<MeshUniforms>.stride
+        meshUniformsBuffer = device.makeBuffer(length: bufferLength, options: [])!
+        meshUniformsBuffer.label = "Mesh Uniforms"
+        var meshUniformsPointer = meshUniformsBuffer.contents().bindMemory(to: MeshUniforms.self, capacity: count)
+        
+        submeshIndex = 0
+        for mesh in meshes {
+            for submesh in mesh.0.submeshes {
+                var meshUniforms = MeshUniforms()
+                meshUniforms.modelMatrix = .identity()
+                meshUniforms.normalMatrix = float4x4.identity().upperLeft
+                meshUniformsPointer.pointee = meshUniforms
+                meshUniformsPointer = meshUniformsPointer.advanced(by: 1)
+                
+                submeshIndex += 1
+            }
+        }
+    }
+    
     func initializeCommands() {
         let d = MTLIndirectCommandBufferDescriptor()
         d.commandTypes = [.drawIndexed]
@@ -252,8 +289,58 @@ class Renderer: NSObject, MTKViewDelegate {
                 submeshIndex += 1
             }
         }
-        GZLogFunc(submeshIndex)
-        GZLogFunc()
+        
+        let icbEncoder = icbComputeFunction.makeArgumentEncoder(bufferIndex: BufferIndex.ICB.rawValue)
+        icbBuffer = device.makeBuffer(length: icbEncoder.encodedLength, options: [])
+        icbEncoder.setArgumentBuffer(icbBuffer, offset: 0)
+        icbEncoder.setIndirectCommandBuffer(icb, index: 0)
+        
+        var mBuffers: [MTLBuffer] = []
+        var mBuffersLength = 0
+        for mesh in meshes {
+            for submesh in mesh.0.submeshes {
+                let encoder = icbComputeFunction.makeArgumentEncoder(bufferIndex: BufferIndex.models.rawValue)
+                let mBuffer = device.makeBuffer(length: encoder.encodedLength, options: [])!
+                encoder.setArgumentBuffer(mBuffer, offset: 0)
+                encoder.setBuffer(mesh.0.mesh.vertexBuffers[0].buffer, offset: 0, index: 0)
+                encoder.setBuffer(submesh.submesh.indexBuffer.buffer, offset: 0, index: 1)
+                encoder.setBuffer(submesh.texturesBuffer, offset: 0, index: 2)
+                encoder.setRenderPipelineState(self.pipelineState, index: 3)
+                mBuffers.append(mBuffer)
+                mBuffersLength += mBuffer.length
+            }
+        }
+        modelsBuffer = device.makeBuffer(length: mBuffersLength, options: [])
+        modelsBuffer.label = "Model Array Buffer"
+        var offset = 0
+        for mBuffer in mBuffers {
+            var pointer = modelsBuffer.contents()
+            pointer = pointer.advanced(by: offset)
+            pointer.copyMemory(from: mBuffer.contents(), byteCount: mBuffer.length)
+            offset += mBuffer.length
+        }
+        
+        let drawLength = count * MemoryLayout<MTLDrawIndexedPrimitivesIndirectArguments>.stride
+        drawArgumentsBuffer = device.makeBuffer(length: drawLength, options: [])!
+        drawArgumentsBuffer.label = "Draw Arguments"
+        var drawPointer = drawArgumentsBuffer.contents().bindMemory(to: MTLDrawIndexedPrimitivesIndirectArguments.self, capacity: count)
+        
+        submeshIndex = 0
+        for mesh in meshes {
+            for submesh in mesh.0.submeshes {
+                var drawArgument = MTLDrawIndexedPrimitivesIndirectArguments()
+                drawArgument.indexCount = UInt32(submesh.submesh.indexCount)
+                drawArgument.instanceCount = 1
+                drawArgument.indexStart = UInt32(submesh.submesh.indexBuffer.offset)
+                drawArgument.baseVertex = 0
+                drawArgument.baseInstance = UInt32(submeshIndex)
+                drawPointer.pointee = drawArgument
+                drawPointer = drawPointer.advanced(by: 1)
+                
+                submeshIndex += 1
+            }
+        }
+        
     }
     
     class func buildMetalVertexDescriptor() -> MTLVertexDescriptor {
@@ -322,6 +409,18 @@ class Renderer: NSObject, MTKViewDelegate {
         pipelineDescriptor.stencilAttachmentPixelFormat = metalKitView.depthStencilPixelFormat
         
         return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+    }
+    
+    static func bulidComputePipelineState(device: MTLDevice, function: MTLFunction) -> MTLComputePipelineState {
+        let pipelineState: MTLComputePipelineState
+        
+        do {
+            pipelineState = try device.makeComputePipelineState(function: function)
+        }
+        catch {
+            fatalError(error.localizedDescription)
+        }
+        return pipelineState
     }
     
     var defaultVertexDescriptor: MDLVertexDescriptor = {
@@ -617,6 +716,39 @@ class Renderer: NSObject, MTKViewDelegate {
                 semaphore.signal()
             }
             
+            guard let computeEncoder = commandBuffer.makeComputeCommandEncoder() else { return }
+            computeEncoder.setComputePipelineState(icbPipelineState)
+            computeEncoder.setBuffer(dynamicUniformBuffer, offset: 0, index: BufferIndex.uniforms.rawValue)
+            computeEncoder.setBuffer(drawArgumentsBuffer, offset: 0, index: BufferIndex.drawArguments.rawValue)
+            computeEncoder.setBuffer(meshUniformsBuffer, offset: 0, index: BufferIndex.meshUniforms.rawValue)
+            computeEncoder.setBuffer(modelsBuffer, offset: 0, index: BufferIndex.models.rawValue)
+            computeEncoder.setBuffer(icbBuffer, offset: 0, index: BufferIndex.ICB.rawValue)
+            
+            computeEncoder.useResource(icb, usage: .write)
+            computeEncoder.useResource(modelsBuffer, usage: .read)
+            if let h = heap {
+                computeEncoder.useHeap(h)
+            }
+            var totalCount = 0
+            for mesh in meshes {
+                for submesh in mesh.0.submeshes {
+                    computeEncoder.useResource(mesh.0.mesh.vertexBuffers[0].buffer, usage: .read)
+                    computeEncoder.useResource(submesh.submesh.indexBuffer.buffer, usage: .read)
+                    computeEncoder.useResource(submesh.texturesBuffer!, usage: .read)
+                    totalCount += 1
+                }
+            }
+            let threadExcutionWidth = icbPipelineState.threadExecutionWidth
+            let threads = MTLSize(width: totalCount, height: 1, depth: 1)
+            let threadsPerThreadgroup = MTLSize(width: threadExcutionWidth, height: 1, depth: 1)
+            computeEncoder.dispatchThreads(threads, threadsPerThreadgroup: threadsPerThreadgroup)
+            computeEncoder.endEncoding()
+            
+            let blitEncoder = commandBuffer.makeBlitCommandEncoder()!
+            blitEncoder.optimizeIndirectCommandBuffer(icb, range: 0..<totalCount)
+            blitEncoder.endEncoding()
+            
+            
             self.updateDynamicBufferState()
             self.updateGameState()
             
@@ -647,6 +779,8 @@ class Renderer: NSObject, MTKViewDelegate {
 //                renderEncoder.setFragmentBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
                 
                 renderEncoder.useResource(dynamicUniformBuffer, usage: .read)
+                renderEncoder.useResource(modelsBuffer, usage: .read)
+                renderEncoder.useResource(meshUniformsBuffer, usage: .read)
                 var submeshCount = 0
                 for mesh in meshes {
                     let rotationAxis = SIMD3<Float>(0, 1, 0)
@@ -662,7 +796,11 @@ class Renderer: NSObject, MTKViewDelegate {
                     )
                     mesh.0.meshUniforms = MeshUniforms(modelMatrix: modelMatrix, normalMatrix: modelMatrix.upperLeft)
                     mesh.0.meshUniformsBuffer.contents().copyMemory(from: &mesh.0.meshUniforms, byteCount: MemoryLayout<MeshUniforms>.stride)
-                    renderEncoder.useResource(mesh.0.meshUniformsBuffer, usage: .read)
+                    
+                    var meshUniformsPointer = meshUniformsBuffer.contents().bindMemory(to: MeshUniforms.self, capacity: totalCount)
+                    var meshUniforms = meshUniformsPointer.advanced(by: submeshCount)
+                    meshUniforms.pointee = mesh.0.meshUniforms
+
                     renderEncoder.useResource(mesh.0.mesh.vertexBuffers[0].buffer, usage: .read)
                     
                     for submesh in mesh.0.submeshes {

@@ -36,11 +36,12 @@ typedef struct
     float3 worldBitangent;
     float3 spotlightPosition;
     float3 coneDirection;
+    uint meshIndex [[ flat ]];
 } ColorInOut;
 
 vertex ColorInOut vertexShader(Vertex in [[stage_in]],
                                constant Uniforms & uniforms [[ buffer(BufferIndexUniforms) ]],
-                               constant MeshUniforms & meshUniforms [[ buffer(BufferIndexMeshUniforms) ]],
+                               constant MeshUniforms * meshUniforms [[ buffer(BufferIndexMeshUniforms) ]],
                                uint baseInstance [[base_instance]])
 {
     float4 position = float4(in.position, 1.0);
@@ -55,7 +56,7 @@ vertex ColorInOut vertexShader(Vertex in [[stage_in]],
                                         float4(0, 0, 0, 1)
                                         );
 //    matrix_float4x4 modelMatrix = uniforms.modelMatrix * r;
-    matrix_float4x4 modelMatrix = meshUniforms.modelMatrix;
+    matrix_float4x4 modelMatrix = meshUniforms[baseInstance].modelMatrix;
     matrix_float3x3 normalMatrix = matrix_float3x3(
                                                    float3(modelMatrix.columns[0].xyz),
                                                    float3(modelMatrix.columns[1].xyz),
@@ -70,7 +71,8 @@ vertex ColorInOut vertexShader(Vertex in [[stage_in]],
         .worldTangent = normalMatrix * in.tangent,
         .worldBitangent = normalMatrix * in.bitangent,
         .spotlightPosition = normalMatrix * float3( 30, 10, 30),
-        .coneDirection = normalMatrix * float3(-1, 0, -1)
+        .coneDirection = normalMatrix * float3(-1, 0, -1),
+        .meshIndex = baseInstance
   };
   return out;
 }
